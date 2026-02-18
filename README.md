@@ -1,4 +1,4 @@
-# Brewy
+# Brewy: A Homebrew GUI
 
 A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, search, install, and update formulae and casks — all without opening Terminal.
 
@@ -20,6 +20,16 @@ A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, se
 
 - macOS 15.0 or later (Apple Silicon)
 - [Homebrew](https://brew.sh) installed (defaults to `/opt/homebrew/bin/brew`, configurable in Settings)
+
+## Installation
+
+The best way to install Brewy is naturally with Homebrew:
+
+```sh
+brew install brewy
+```
+
+You can also grab the latest release from the [GitHub releases page](https://github.com/p-linnane/brewy/releases). Sparkle autoupdate support is coming soon.
 
 ## Building
 
