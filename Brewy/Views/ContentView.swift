@@ -55,8 +55,11 @@ struct ContentView: View {
                     title: "Select a Tap",
                     subtitle: "Choose a tap from the list to view its details."
                 )
-            } else if let package = selectedPackage {
+            } else if let selectedPackage {
+                let package = brewService.allInstalled.first(where: { $0.id == selectedPackage.id }) ?? selectedPackage
+                let isOutdated = brewService.outdatedPackages.contains { $0.id == selectedPackage.id }
                 PackageDetailView(package: package)
+                    .id(isOutdated)
             } else {
                 EmptyStateView()
             }

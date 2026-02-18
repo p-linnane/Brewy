@@ -151,9 +151,13 @@ struct MaintenanceView: View {
         isCalculatingCache = false
     }
 
-    private func formattedSize(_ bytes: Int64) -> String {
+    private static let sizeFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
+        return formatter
+    }()
+
+    private func formattedSize(_ bytes: Int64) -> String {
+        Self.sizeFormatter.string(fromByteCount: bytes)
     }
 }
