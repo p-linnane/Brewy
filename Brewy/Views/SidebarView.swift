@@ -78,11 +78,11 @@ private struct SidebarFooter: View {
                 Button {
                     Task { await brewService.refresh() }
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                        .font(.caption)
                 }
                 .buttonStyle(.borderless)
                 .disabled(brewService.isLoading)
-                .help("Refresh packages")
 
                 Spacer()
 

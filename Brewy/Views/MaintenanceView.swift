@@ -6,6 +6,8 @@ struct MaintenanceView: View {
     @State private var isRunningDoctor = false
     @State private var isCalculatingCache = false
     @State private var cacheSizeBytes: Int64?
+    @State private var brewConfig: BrewConfig?
+    @State private var isLoadingConfig = true
 
     var body: some View {
         Form {
@@ -17,7 +19,16 @@ struct MaintenanceView: View {
         .formStyle(.grouped)
         .navigationTitle("Maintenance")
         .task {
-            await loadCacheSize()
+            async let cacheTask: () = loadCacheSize()
+            async let configTask: () = loadConfig()
+            _ = await (cacheTask, configTask)
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { break }
+                brewConfig = await brewService.config()
+            }
         }
     }
 
@@ -126,18 +137,18 @@ struct MaintenanceView: View {
                         .controlSize(.small)
                 }
                 Button("Update") {
-                    Task { await brewService.updateHomebrew() }
+                    Task {
+                        await brewService.updateHomebrew()
+                        await loadConfig()
+                    }
                 }
                 .disabled(brewService.isPerformingAction)
             }
 
-            if let lastUpdated = brewService.lastUpdated {
-                LabeledContent("Last refreshed") {
-                    Text(lastUpdated.formatted(.relative(presentation: .named)))
-                        .foregroundStyle(.secondary)
-                }
-                .font(.callout)
-            }
+            configRow("Homebrew version", value: brewConfig?.version)
+            configRow("Homebrew/brew last updated", value: brewConfig?.homebrewLastCommit)
+            configRow("Homebrew/core last updated", value: brewConfig?.coreTapLastCommit)
+            configRow("Homebrew/cask last updated", value: brewConfig?.coreCaskTapLastCommit)
         } footer: {
             Text("Fetches the newest version of Homebrew and all formulae from GitHub.")
         }
@@ -149,6 +160,25 @@ struct MaintenanceView: View {
         isCalculatingCache = true
         cacheSizeBytes = await brewService.cacheSize()
         isCalculatingCache = false
+    }
+
+    private func loadConfig() async {
+        isLoadingConfig = true
+        brewConfig = await brewService.config()
+        isLoadingConfig = false
+    }
+
+    private func configRow(_ label: String, value: String?) -> some View {
+        LabeledContent(label) {
+            if isLoadingConfig {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Text(value ?? "—")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .font(.callout)
     }
 
     private static let sizeFormatter: ByteCountFormatter = {

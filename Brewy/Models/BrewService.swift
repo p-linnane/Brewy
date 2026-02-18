@@ -1,6 +1,25 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Error Types
+
+enum BrewError: LocalizedError {
+    case brewNotFound(path: String)
+    case commandFailed(command: String, output: String)
+    case parseFailed(command: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .brewNotFound(let path):
+            return "Homebrew not found at \(path)"
+        case .commandFailed(_, let output):
+            return output
+        case .parseFailed(let command):
+            return "Failed to parse output from: brew \(command)"
+        }
+    }
+}
+
 @Observable
 @MainActor
 final class BrewService {
@@ -19,10 +38,11 @@ final class BrewService {
     var isLoading = false
     var isPerformingAction = false
     var actionOutput: String = ""
-    var errorMessage: String?
+    var lastError: BrewError?
     var lastUpdated: Date?
 
     private var tapsLoaded = false
+    private var infoCache: [String: String] = [:]
 
     // MARK: - Cached Derived State
 
@@ -111,11 +131,12 @@ final class BrewService {
     // MARK: - Homebrew CLI Interactions
 
     func refresh() async {
+        infoCache.removeAll()
         let hadCachedData = !installedFormulae.isEmpty || !installedCasks.isEmpty
         if !hadCachedData {
             isLoading = true
         }
-        errorMessage = nil
+        lastError = nil
         defer {
             isLoading = false
         }
@@ -154,7 +175,7 @@ final class BrewService {
         }
 
         isLoading = true
-        errorMessage = nil
+        lastError = nil
         defer { isLoading = false }
 
         searchResults = await performSearch(query: query)
@@ -175,13 +196,13 @@ final class BrewService {
     func upgradeAll() async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["upgrade"])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "upgrade", output: result.output)
         }
         await refresh()
     }
@@ -197,13 +218,13 @@ final class BrewService {
     func updateHomebrew() async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["update"])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "update", output: result.output)
         }
         await refresh()
     }
@@ -220,13 +241,13 @@ final class BrewService {
     func addTap(name: String) async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["tap", name])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "tap", output: result.output)
         }
         tapsLoaded = false
         await ensureTapsLoaded()
@@ -236,13 +257,13 @@ final class BrewService {
     func removeTap(name: String) async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["untap", name])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "untap", output: result.output)
         }
         tapsLoaded = false
         await ensureTapsLoaded()
@@ -252,7 +273,7 @@ final class BrewService {
     func upgradeSelected(packages: [BrewPackage]) async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let formulae = packages.filter { !$0.isCask }.map(\.name)
@@ -261,12 +282,12 @@ final class BrewService {
         if !formulae.isEmpty {
             let result = await runBrewCommand(["upgrade"] + formulae)
             actionOutput += result.output
-            if !result.success { errorMessage = result.output }
+            if !result.success { lastError = .commandFailed(command: "upgrade", output: result.output) }
         }
         if !casks.isEmpty {
             let result = await runBrewCommand(["upgrade", "--cask"] + casks)
             actionOutput += result.output
-            if !result.success { errorMessage = (errorMessage ?? "") + "\n" + result.output }
+            if !result.success { lastError = .commandFailed(command: "upgrade --cask", output: result.output) }
         }
         await refresh()
     }
@@ -279,13 +300,13 @@ final class BrewService {
     func removeOrphans() async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["autoremove"])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "autoremove", output: result.output)
         }
         await refresh()
     }
@@ -321,19 +342,26 @@ final class BrewService {
     func purgeCache() async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["cleanup", "--prune=all", "-s"])
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: "cleanup", output: result.output)
         }
     }
 
+    func config() async -> BrewConfig {
+        let result = await runBrewCommand(["config"])
+        return BrewConfig.parse(from: result.output)
+    }
+
     func info(for package: BrewPackage) async -> String {
+        if let cached = infoCache[package.id] { return cached }
         let command = package.isCask ? ["info", "--cask", package.name] : ["info", package.name]
         let result = await runBrewCommand(command)
+        infoCache[package.id] = result.output
         return result.output
     }
 
@@ -342,7 +370,7 @@ final class BrewService {
     private func performAction(_ action: String, package: BrewPackage) async {
         isPerformingAction = true
         actionOutput = ""
-        errorMessage = nil
+        lastError = nil
         defer { isPerformingAction = false }
 
         var args = [action]
@@ -352,7 +380,7 @@ final class BrewService {
         let result = await runBrewCommand(args)
         actionOutput = result.output
         if !result.success {
-            errorMessage = result.output
+            lastError = .commandFailed(command: action, output: result.output)
         }
         await refresh()
     }
@@ -362,13 +390,8 @@ final class BrewService {
         guard result.success, let data = result.output.data(using: .utf8) else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
-            do {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                let formulae = json?["formulae"] as? [[String: Any]] ?? []
-                return formulae.compactMap { Self.parseFormula($0) }
-            } catch {
-                return []
-            }
+            guard let response = try? JSONDecoder().decode(BrewInfoResponse.self, from: data) else { return [] }
+            return (response.formulae ?? []).map { $0.toPackage() }
         }.value
     }
 
@@ -377,13 +400,8 @@ final class BrewService {
         guard result.success, let data = result.output.data(using: .utf8) else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
-            do {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                let casks = json?["casks"] as? [[String: Any]] ?? []
-                return casks.compactMap { Self.parseCask($0) }
-            } catch {
-                return []
-            }
+            guard let response = try? JSONDecoder().decode(BrewInfoResponse.self, from: data) else { return [] }
+            return (response.casks ?? []).map { $0.toPackage() }
         }.value
     }
 
@@ -392,57 +410,10 @@ final class BrewService {
         guard result.success, let data = result.output.data(using: .utf8) else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
-            do {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                let formulae = json?["formulae"] as? [[String: Any]] ?? []
-                let casks = json?["casks"] as? [[String: Any]] ?? []
-
-                let outdatedFormulae = formulae.compactMap { dict -> BrewPackage? in
-                    guard let name = dict["name"] as? String,
-                          let installedVersions = dict["installed_versions"] as? [String],
-                          let currentVersion = dict["current_version"] as? String else { return nil }
-                    return BrewPackage(
-                        id: "formula-\(name)",
-                        name: name,
-                        version: installedVersions.first ?? "unknown",
-                        description: "",
-                        homepage: "",
-                        isInstalled: true,
-                        isOutdated: true,
-                        installedVersion: installedVersions.first,
-                        latestVersion: currentVersion,
-                        isCask: false,
-                        pinned: dict["pinned"] as? Bool ?? false,
-                        installedOnRequest: true,
-                        dependencies: []
-                    )
-                }
-
-                let outdatedCasks = casks.compactMap { dict -> BrewPackage? in
-                    guard let name = dict["name"] as? String,
-                          let installedVersions = dict["installed_versions"] as? String,
-                          let currentVersion = dict["current_version"] as? String else { return nil }
-                    return BrewPackage(
-                        id: "cask-\(name)",
-                        name: name,
-                        version: installedVersions,
-                        description: "",
-                        homepage: "",
-                        isInstalled: true,
-                        isOutdated: true,
-                        installedVersion: installedVersions,
-                        latestVersion: currentVersion,
-                        isCask: true,
-                        pinned: false,
-                        installedOnRequest: true,
-                        dependencies: []
-                    )
-                }
-
-                return outdatedFormulae + outdatedCasks
-            } catch {
-                return []
-            }
+            guard let response = try? JSONDecoder().decode(BrewOutdatedResponse.self, from: data) else { return [] }
+            let formulae = (response.formulae ?? []).compactMap { $0.toPackage() }
+            let casks = (response.casks ?? []).compactMap { $0.toPackage() }
+            return formulae + casks
         }.value
     }
 
@@ -451,28 +422,8 @@ final class BrewService {
         guard result.success, let data = result.output.data(using: .utf8) else { return [] }
 
         return await Task.detached(priority: .userInitiated) {
-            do {
-                let taps = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
-                return taps.compactMap { dict -> BrewTap? in
-                    guard let name = dict["name"] as? String else { return nil }
-                    var remote = dict["remote"] as? String ?? ""
-                    if remote.hasSuffix(".git") {
-                        remote = String(remote.dropLast(4))
-                    }
-                    let official = dict["official"] as? Bool ?? false
-                    let formulaNames = dict["formula_names"] as? [String] ?? []
-                    let caskTokens = dict["cask_tokens"] as? [String] ?? []
-                    return BrewTap(
-                        name: name,
-                        remote: remote,
-                        isOfficial: official,
-                        formulaNames: formulaNames,
-                        caskTokens: caskTokens
-                    )
-                }
-            } catch {
-                return []
-            }
+            guard let taps = try? JSONDecoder().decode([TapJSON].self, from: data) else { return [] }
+            return taps.map { $0.toTap() }
         }.value
     }
 
@@ -512,58 +463,6 @@ final class BrewService {
         }
 
         return packages
-    }
-
-    private nonisolated static func parseFormula(_ dict: [String: Any]) -> BrewPackage? {
-        guard let name = dict["name"] as? String else { return nil }
-        let versions = dict["versions"] as? [String: Any]
-        let stable = versions?["stable"] as? String ?? "unknown"
-        let desc = dict["desc"] as? String ?? ""
-        let homepage = dict["homepage"] as? String ?? ""
-        let installed = dict["installed"] as? [[String: Any]]
-        let installedVersion = installed?.first?["version"] as? String
-        let pinned = dict["pinned"] as? Bool ?? false
-        let installedOnRequest = installed?.first?["installed_on_request"] as? Bool ?? false
-        let deps = dict["dependencies"] as? [String] ?? []
-
-        return BrewPackage(
-            id: "formula-\(name)",
-            name: name,
-            version: installedVersion ?? stable,
-            description: desc,
-            homepage: homepage,
-            isInstalled: true,
-            isOutdated: false,
-            installedVersion: installedVersion,
-            latestVersion: stable,
-            isCask: false,
-            pinned: pinned,
-            installedOnRequest: installedOnRequest,
-            dependencies: deps
-        )
-    }
-
-    private nonisolated static func parseCask(_ dict: [String: Any]) -> BrewPackage? {
-        guard let token = dict["token"] as? String else { return nil }
-        let version = dict["version"] as? String ?? "unknown"
-        let desc = dict["desc"] as? String ?? ""
-        let homepage = dict["homepage"] as? String ?? ""
-
-        return BrewPackage(
-            id: "cask-\(token)",
-            name: token,
-            version: version,
-            description: desc,
-            homepage: homepage,
-            isInstalled: true,
-            isOutdated: false,
-            installedVersion: version,
-            latestVersion: nil,
-            isCask: true,
-            pinned: false,
-            installedOnRequest: true,
-            dependencies: []
-        )
     }
 
     private nonisolated static func mergeOutdatedStatus(
@@ -606,13 +505,20 @@ final class BrewService {
             do {
                 try process.run()
 
+                async let stderrData = withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        let data = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                        continuation.resume(returning: data)
+                    }
+                }
+
                 let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                let resolvedStderr = await stderrData
 
                 process.waitUntilExit()
 
                 let output = String(data: stdoutData, encoding: .utf8) ?? ""
-                let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
+                let errorOutput = String(data: resolvedStderr, encoding: .utf8) ?? ""
                 let combinedOutput = output.isEmpty ? errorOutput : output
 
                 return CommandResult(output: combinedOutput, success: process.terminationStatus == 0)

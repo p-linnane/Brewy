@@ -169,36 +169,48 @@ private struct PackageListToolbar: ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             if isOutdated {
                 if isSelecting {
-                    Button("Upgrade Selected (\(selectedForUpgrade.count))", systemImage: "arrow.up.circle") {
+                    Button {
                         let toUpgrade = outdatedPackages.filter { selectedForUpgrade.contains($0.id) }
                         Task {
                             await brewService.upgradeSelected(packages: toUpgrade)
                             selectedForUpgrade.removeAll()
                             isSelecting = false
                         }
+                    } label: {
+                        Label("Upgrade Selected (\(selectedForUpgrade.count))", systemImage: "arrow.up.circle")
+                            .labelStyle(.titleAndIcon)
                     }
                     .disabled(selectedForUpgrade.isEmpty)
 
-                    Button("Cancel", systemImage: "xmark") {
+                    Button {
                         selectedForUpgrade.removeAll()
                         isSelecting = false
+                    } label: {
+                        Label("Cancel", systemImage: "xmark")
+                            .labelStyle(.titleAndIcon)
                     }
                 } else {
-                    Button("Select", systemImage: "checkmark.circle") {
+                    Button {
                         isSelecting = true
+                    } label: {
+                        Label("Select Packages", systemImage: "checkmark.circle")
+                            .labelStyle(.titleAndIcon)
                     }
-                    .help("Select packages to upgrade")
 
-                    Button("Upgrade All", systemImage: "arrow.triangle.2.circlepath") {
+                    Button {
                         Task { await brewService.upgradeAll() }
+                    } label: {
+                        Label("Upgrade All", systemImage: "arrow.triangle.2.circlepath")
+                            .labelStyle(.titleAndIcon)
                     }
-                    .help("Upgrade all outdated packages")
                 }
             } else if !brewService.outdatedPackages.isEmpty {
-                Button("Upgrade All", systemImage: "arrow.triangle.2.circlepath") {
+                Button {
                     Task { await brewService.upgradeAll() }
+                } label: {
+                    Label("Upgrade All", systemImage: "arrow.triangle.2.circlepath")
+                        .labelStyle(.titleAndIcon)
                 }
-                .help("Upgrade all outdated packages")
             }
         }
     }
