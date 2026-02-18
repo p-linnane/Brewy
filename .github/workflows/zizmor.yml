@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - ".github/workflows/**"
   pull_request:
+    paths:
+      - ".github/workflows/**"
 
 defaults:
   run:
@@ -23,6 +27,7 @@ permissions: {}
 
 jobs:
   zizmor:
+    name: Analyze
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,12 +60,13 @@ jobs:
           path: results.sarif
 
   upload_sarif:
+    name: Upload SARIF
     needs: zizmor
     if: always() && !contains(fromJSON('["cancelled", "skipped"]'), needs.zizmor.result)
     runs-on: ubuntu-slim
     permissions:
       contents: read
-      security-events: write
+      security-events: write # required to upload SARIF results
     steps:
       - name: Download SARIF file
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

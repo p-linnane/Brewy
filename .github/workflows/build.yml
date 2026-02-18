@@ -15,6 +15,7 @@ permissions: {}
 
 jobs:
   build:
+    name: Xcode
     runs-on: macos-latest
     permissions:
       contents: read
