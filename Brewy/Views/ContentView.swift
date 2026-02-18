@@ -80,17 +80,17 @@ struct ContentView: View {
                 await brewService.refresh()
             }
         }
-        .onChange(of: brewService.errorMessage) {
-            showError = brewService.errorMessage != nil
+        .onChange(of: brewService.lastError?.errorDescription) {
+            showError = brewService.lastError != nil
         }
         .alert(
             "Error",
             isPresented: $showError,
-            presenting: brewService.errorMessage
+            presenting: brewService.lastError
         ) { _ in
-            Button("OK") { brewService.errorMessage = nil }
-        } message: { message in
-            Text(message)
+            Button("OK") { brewService.lastError = nil }
+        } message: { error in
+            Text(error.localizedDescription)
         }
     }
 
