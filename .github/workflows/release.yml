@@ -69,7 +69,7 @@ jobs:
           xcodebuild archive \
             -project Brewy.xcodeproj \
             -scheme Brewy \
-            -destination 'platform=macOS' \
+            -destination 'generic/platform=macOS' \
             -configuration Release \
             -archivePath "${RUNNER_TEMP}/Brewy.xcarchive" \
             CODE_SIGN_STYLE=Manual \
