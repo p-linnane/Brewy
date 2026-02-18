@@ -1,0 +1,163 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
+concurrency:
+  group: "release-${{ github.ref }}"
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    outputs:
+      artifact_name: "Brewy-${{ github.ref_name }}.zip"
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    env:
+      TEMPORARY_CERTIFICATE_FILE: "brewy_developer_id_certificate.p12"
+      TEMPORARY_KEYCHAIN_FILE: "brewy_signing.keychain-db"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Create and unlock temporary macOS keychain
+        run: |
+          TEMPORARY_KEYCHAIN_PASSWORD="$(openssl rand -base64 20)"
+          TEMPORARY_KEYCHAIN_PATH="${RUNNER_TEMP}/${TEMPORARY_KEYCHAIN_FILE}"
+          security create-keychain -p "${TEMPORARY_KEYCHAIN_PASSWORD}" "${TEMPORARY_KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${TEMPORARY_KEYCHAIN_PATH}"
+          security unlock-keychain -p "${TEMPORARY_KEYCHAIN_PASSWORD}" "${TEMPORARY_KEYCHAIN_PATH}"
+
+      - name: Create temporary certificate file
+        env:
+          DEVELOPER_ID_CERTIFICATE: ${{ secrets.DEVELOPER_ID_CERTIFICATE }}
+        run: echo -n "${DEVELOPER_ID_CERTIFICATE}" |
+          base64 --decode --output="${RUNNER_TEMP}/${TEMPORARY_CERTIFICATE_FILE}"
+
+      - name: Import certificate into keychain
+        env:
+          DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: security import "${RUNNER_TEMP}/${TEMPORARY_CERTIFICATE_FILE}"
+          -k "${RUNNER_TEMP}/${TEMPORARY_KEYCHAIN_FILE}"
+          -P "${DEVELOPER_ID_CERTIFICATE_PASSWORD}"
+          -t cert -f pkcs12 -A
+
+      - name: Clean up temporary certificate file
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/${TEMPORARY_CERTIFICATE_FILE}"
+
+      - name: Open keychain
+        run: security list-keychain -d user -s "${RUNNER_TEMP}/${TEMPORARY_KEYCHAIN_FILE}"
+
+      - name: Archive
+        run: |
+          xcodebuild archive \
+            -project Brewy.xcodeproj \
+            -scheme Brewy \
+            -destination 'platform=macOS' \
+            -configuration Release \
+            -archivePath "${RUNNER_TEMP}/Brewy.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}"
+
+      - name: Export
+        run: |
+          cat > "${RUNNER_TEMP}/ExportOptions.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>developer-id</string>
+              <key>teamID</key>
+              <string>${DEVELOPMENT_TEAM}</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "${RUNNER_TEMP}/Brewy.xcarchive" \
+            -exportOptionsPlist "${RUNNER_TEMP}/ExportOptions.plist" \
+            -exportPath "${RUNNER_TEMP}/export"
+
+      - name: Clean up temporary keychain
+        if: always()
+        run: |
+          if [[ -f "${RUNNER_TEMP}/${TEMPORARY_KEYCHAIN_FILE}" ]]; then
+            security delete-keychain "${RUNNER_TEMP}/${TEMPORARY_KEYCHAIN_FILE}"
+          fi
+
+      - name: Package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          ditto -c -k --keepParent \
+            "${RUNNER_TEMP}/export/Brewy.app" \
+            "${RUNNER_TEMP}/Brewy-${TAG}.zip"
+
+      - name: Generate build provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: "${{ runner.temp }}/Brewy-${{ github.ref_name }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: "Brewy-${{ github.ref_name }}.zip"
+          path: "${{ runner.temp }}/Brewy-${{ github.ref_name }}.zip"
+
+  upload:
+    needs: build
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: "${{ needs.build.outputs.artifact_name }}"
+
+      - name: Notarize and staple
+        env:
+          APPLE_ID: ${{ secrets.NOTARIZATION_APPLE_ID }}
+          NOTARIZATION_PASSWORD: ${{ secrets.NOTARIZATION_PASSWORD }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+        run: |
+          xcrun notarytool submit "${ARTIFACT_NAME}" \
+            --team-id "${DEVELOPMENT_TEAM}" \
+            --apple-id "${APPLE_ID}" \
+            --password "${NOTARIZATION_PASSWORD}" \
+            --wait
+          ditto -xk "${ARTIFACT_NAME}" "${RUNNER_TEMP}/staple"
+          xcrun stapler staple "${RUNNER_TEMP}/staple/Brewy.app"
+          ditto -c -k --keepParent \
+            "${RUNNER_TEMP}/staple/Brewy.app" \
+            "${ARTIFACT_NAME}"
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+        run: |
+          gh release create "${TAG}" \
+            --repo "${{ github.repository }}" \
+            --title "${TAG}" \
+            --draft \
+            --generate-notes \
+            "${ARTIFACT_NAME}"
