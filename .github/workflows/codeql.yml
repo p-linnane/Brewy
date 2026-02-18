@@ -12,6 +12,10 @@ defaults:
   run:
     shell: bash -xeuo pipefail {0}
 
+concurrency:
+  group: "codeql-${{ github.ref }}"
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:
@@ -20,7 +24,7 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
-      security-events: write
+      security-events: write # required to upload SARIF results
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

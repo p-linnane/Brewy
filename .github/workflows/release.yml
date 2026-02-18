@@ -20,13 +20,14 @@ env:
 
 jobs:
   build:
+    name: Build
     runs-on: macos-latest
     outputs:
       artifact_name: "Brewy-${{ github.ref_name }}.zip"
     permissions:
       contents: read
-      attestations: write
-      id-token: write
+      attestations: write # required to generate build provenance attestations
+      id-token: write # required to generate build provenance attestations
     env:
       TEMPORARY_CERTIFICATE_FILE: "brewy_developer_id_certificate.p12"
       TEMPORARY_KEYCHAIN_FILE: "brewy_signing.keychain-db"
@@ -122,10 +123,11 @@ jobs:
           path: "${{ runner.temp }}/Brewy-${{ github.ref_name }}.zip"
 
   upload:
+    name: Upload
     needs: build
     runs-on: macos-latest
     permissions:
-      contents: write
+      contents: write # required to create GitHub releases
     steps:
       - name: Download artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -154,9 +156,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
           ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           gh release create "${TAG}" \
-            --repo "${{ github.repository }}" \
+            --repo "${REPOSITORY}" \
             --title "${TAG}" \
             --draft \
             --generate-notes \
