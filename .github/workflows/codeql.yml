@@ -1,0 +1,47 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
+permissions: {}
+
+jobs:
+  analyze:
+    name: Analyze (Swift)
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
+        with:
+          languages: swift
+          build-mode: manual
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Brewy.xcodeproj \
+            -scheme Brewy \
+            -destination 'platform=macOS' \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
+        with:
+          category: "/language:swift"

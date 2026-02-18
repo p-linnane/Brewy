@@ -1,4 +1,4 @@
-name: zizmor Analysis
+name: zizmor
 
 on:
   push:
