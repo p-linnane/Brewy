@@ -232,13 +232,14 @@ private struct DependencyTags: View {
     let packages: [String]
 
     var body: some View {
+        let knownNames = brewService.installedNames
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             FlowLayout(spacing: 6) {
                 ForEach(packages, id: \.self) { name in
-                    let isInstalled = brewService.allInstalled.contains { $0.name == name }
+                    let isInstalled = knownNames.contains(name)
                     Button {
                         selectPackage(name)
                     } label: {
@@ -262,43 +263,55 @@ private struct DependencyTags: View {
 private struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = computeRows(proposal: proposal, subviews: subviews)
+    struct CacheData {
+        var sizes: [CGSize] = []
+    }
+
+    func makeCache(subviews: Subviews) -> CacheData {
+        CacheData(sizes: subviews.map { $0.sizeThatFits(.unspecified) })
+    }
+
+    func updateCache(_ cache: inout CacheData, subviews: Subviews) {
+        cache.sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout CacheData) -> CGSize {
+        let rows = computeRows(proposal: proposal, sizes: cache.sizes)
         var height: CGFloat = 0
         for (index, row) in rows.enumerated() {
-            let rowHeight = row.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
+            let rowHeight = row.map(\.height).max() ?? 0
             height += rowHeight
             if index < rows.count - 1 { height += spacing }
         }
         return CGSize(width: proposal.width ?? 0, height: height)
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let rows = computeRows(proposal: proposal, subviews: subviews)
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout CacheData) {
+        let rows = computeRows(proposal: proposal, sizes: cache.sizes)
         var y = bounds.minY
+        var subviewIndex = 0
         for row in rows {
-            let rowHeight = row.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
+            let rowHeight = row.map(\.height).max() ?? 0
             var x = bounds.minX
-            for subview in row {
-                let size = subview.sizeThatFits(.unspecified)
-                subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            for size in row {
+                subviews[subviewIndex].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
                 x += size.width + spacing
+                subviewIndex += 1
             }
             y += rowHeight + spacing
         }
     }
 
-    private func computeRows(proposal: ProposedViewSize, subviews: Subviews) -> [[LayoutSubviews.Element]] {
+    private func computeRows(proposal: ProposedViewSize, sizes: [CGSize]) -> [[CGSize]] {
         let maxWidth = proposal.width ?? .infinity
-        var rows: [[LayoutSubviews.Element]] = [[]]
+        var rows: [[CGSize]] = [[]]
         var currentWidth: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+        for size in sizes {
             if currentWidth + size.width > maxWidth, !rows[rows.count - 1].isEmpty {
                 rows.append([])
                 currentWidth = 0
             }
-            rows[rows.count - 1].append(subview)
+            rows[rows.count - 1].append(size)
             currentWidth += size.width + spacing
         }
         return rows

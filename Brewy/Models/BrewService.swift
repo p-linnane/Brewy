@@ -7,8 +7,12 @@ final class BrewService {
     @ObservationIgnored
     @AppStorage("brewPath") var customBrewPath = "/opt/homebrew/bin/brew"
 
-    var installedFormulae: [BrewPackage] = []
-    var installedCasks: [BrewPackage] = []
+    var installedFormulae: [BrewPackage] = [] {
+        didSet { invalidateDerivedState() }
+    }
+    var installedCasks: [BrewPackage] = [] {
+        didSet { invalidateDerivedState() }
+    }
     var outdatedPackages: [BrewPackage] = []
     var installedTaps: [BrewTap] = []
     var searchResults: [BrewPackage] = []
@@ -20,8 +24,25 @@ final class BrewService {
 
     private var tapsLoaded = false
 
-    var allInstalled: [BrewPackage] {
-        installedFormulae + installedCasks
+    // MARK: - Cached Derived State
+
+    private(set) var allInstalled: [BrewPackage] = []
+    private(set) var installedNames: Set<String> = []
+    private(set) var reverseDependencies: [String: [BrewPackage]] = [:]
+
+    private func invalidateDerivedState() {
+        let all = installedFormulae + installedCasks
+        allInstalled = all
+        installedNames = Set(all.map(\.name))
+
+        var reverse: [String: [BrewPackage]] = [:]
+        reverse.reserveCapacity(all.count)
+        for pkg in all {
+            for dep in pkg.dependencies {
+                reverse[dep, default: []].append(pkg)
+            }
+        }
+        reverseDependencies = reverse
     }
 
     var pinnedPackages: [BrewPackage] {
@@ -29,7 +50,7 @@ final class BrewService {
     }
 
     func dependents(of name: String) -> [BrewPackage] {
-        allInstalled.filter { $0.dependencies.contains(name) }
+        reverseDependencies[name] ?? []
     }
 
     func packages(for category: SidebarCategory) -> [BrewPackage] {
@@ -103,9 +124,14 @@ final class BrewService {
         async let casks = fetchInstalledCasks()
         async let outdated = fetchOutdatedPackages()
 
-        installedFormulae = await formulae
-        installedCasks = await casks
-        outdatedPackages = await outdated
+        let fetchedFormulae = await formulae
+        let fetchedCasks = await casks
+        let fetchedOutdated = await outdated
+        let outdatedByID = Dictionary(uniqueKeysWithValues: fetchedOutdated.map { ($0.id, $0) })
+
+        installedFormulae = fetchedFormulae.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) }
+        installedCasks = fetchedCasks.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) }
+        outdatedPackages = fetchedOutdated
         lastUpdated = Date()
 
         installedTaps = await fetchTaps()
@@ -229,15 +255,18 @@ final class BrewService {
         errorMessage = nil
         defer { isPerformingAction = false }
 
-        var args = ["upgrade"]
-        for pkg in packages {
-            if pkg.isCask { args.append("--cask") }
-            args.append(pkg.name)
+        let formulae = packages.filter { !$0.isCask }.map(\.name)
+        let casks = packages.filter(\.isCask).map(\.name)
+
+        if !formulae.isEmpty {
+            let result = await runBrewCommand(["upgrade"] + formulae)
+            actionOutput += result.output
+            if !result.success { errorMessage = result.output }
         }
-        let result = await runBrewCommand(args)
-        actionOutput = result.output
-        if !result.success {
-            errorMessage = result.output
+        if !casks.isEmpty {
+            let result = await runBrewCommand(["upgrade", "--cask"] + casks)
+            actionOutput += result.output
+            if !result.success { errorMessage = (errorMessage ?? "") + "\n" + result.output }
         }
         await refresh()
     }
@@ -452,7 +481,9 @@ final class BrewService {
         guard result.success else { return [] }
 
         let lines = result.output.components(separatedBy: "\n").filter { !$0.isEmpty }
+        let knownNames = installedNames
         var packages: [BrewPackage] = []
+        packages.reserveCapacity(lines.count)
         var isCaskSection = false
 
         for line in lines {
@@ -463,14 +494,13 @@ final class BrewService {
             let name = line.trimmingCharacters(in: .whitespaces)
             guard !name.isEmpty else { continue }
 
-            let isInstalled = allInstalled.contains { $0.name == name }
             packages.append(BrewPackage(
                 id: "\(isCaskSection ? "cask" : "formula")-search-\(name)",
                 name: name,
                 version: "",
                 description: "",
                 homepage: "",
-                isInstalled: isInstalled,
+                isInstalled: knownNames.contains(name),
                 isOutdated: false,
                 installedVersion: nil,
                 latestVersion: nil,
@@ -533,6 +563,23 @@ final class BrewService {
             pinned: false,
             installedOnRequest: true,
             dependencies: []
+        )
+    }
+
+    private nonisolated static func mergeOutdatedStatus(
+        _ pkg: BrewPackage,
+        outdatedByID: [String: BrewPackage]
+    ) -> BrewPackage {
+        guard let outdatedPkg = outdatedByID[pkg.id] else { return pkg }
+        return BrewPackage(
+            id: pkg.id, name: pkg.name, version: pkg.version,
+            description: pkg.description, homepage: pkg.homepage,
+            isInstalled: pkg.isInstalled, isOutdated: true,
+            installedVersion: pkg.installedVersion,
+            latestVersion: outdatedPkg.latestVersion,
+            isCask: pkg.isCask, pinned: pkg.pinned,
+            installedOnRequest: pkg.installedOnRequest,
+            dependencies: pkg.dependencies
         )
     }
 

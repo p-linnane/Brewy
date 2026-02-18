@@ -96,6 +96,14 @@ private struct AddTapSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tapName = ""
 
+    private var isValidTapName: Bool {
+        let trimmed = tapName.trimmingCharacters(in: .whitespaces)
+        let parts = trimmed.split(separator: "/")
+        return parts.count == 2
+            && parts.allSatisfy { !$0.isEmpty }
+            && trimmed.allSatisfy { $0.isLetter || $0.isNumber || $0 == "/" || $0 == "-" || $0 == "_" || $0 == "." }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Text("Add Tap")
@@ -105,6 +113,11 @@ private struct AddTapSheet: View {
                 .foregroundStyle(.secondary)
             TextField("user/repo", text: $tapName)
                 .textFieldStyle(.roundedBorder)
+            if !tapName.isEmpty, !isValidTapName {
+                Text("Tap name must be in user/repo format.")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
             HStack {
                 Button("Cancel") {
                     dismiss()
@@ -112,14 +125,14 @@ private struct AddTapSheet: View {
                 .keyboardShortcut(.cancelAction)
                 Button("Add") {
                     let name = tapName.trimmingCharacters(in: .whitespaces)
-                    guard !name.isEmpty else { return }
+                    guard isValidTapName else { return }
                     Task {
                         await brewService.addTap(name: name)
                         dismiss()
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(tapName.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(!isValidTapName)
             }
         }
         .padding(20)
@@ -134,11 +147,13 @@ struct TapDetailView: View {
     let tap: BrewTap
 
     private var installedFormulae: [BrewPackage] {
-        brewService.installedFormulae.filter { tap.formulaNames.contains($0.name) }
+        let names = Set(tap.formulaNames)
+        return brewService.installedFormulae.filter { names.contains($0.name) }
     }
 
     private var installedCasks: [BrewPackage] {
-        brewService.installedCasks.filter { tap.caskTokens.contains($0.name) }
+        let tokens = Set(tap.caskTokens)
+        return brewService.installedCasks.filter { tokens.contains($0.name) }
     }
 
     var body: some View {
