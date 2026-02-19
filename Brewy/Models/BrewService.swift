@@ -540,7 +540,7 @@ final class BrewService {
         return packages
     }
 
-    nonisolated private static func mergeOutdatedStatus(
+    nonisolated static func mergeOutdatedStatus(
         _ pkg: BrewPackage,
         outdatedByID: [String: BrewPackage]
     ) -> BrewPackage {

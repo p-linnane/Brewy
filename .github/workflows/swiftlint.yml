@@ -5,6 +5,7 @@ on:
     paths:
       - "**/*.swift"
       - ".swiftlint.yml"
+      - ".github/workflows/swiftlint.yml"
 
 defaults:
   run:

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,6 +24,16 @@
 		CDED6EE32F47D370007C4421 /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDED6EE22F47D370007C4421 /* CommandRunner.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		CD91B5BE2F47CD1200961211 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FF0002000000000000000002 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FF0001000000000000000001;
+			remoteInfo = Brewy;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		BB0001000000000000000001 /* BrewyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewyApp.swift; sourceTree = "<group>"; };
 		BB0002000000000000000002 /* PackageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageModel.swift; sourceTree = "<group>"; };
@@ -40,11 +50,23 @@
 		CC0001000000000000000001 /* Brewy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brewy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD0792442F47BAA300644F29 /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		CD69630D2F479ED20033ABD8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BrewyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CDC4C71C2F477969004EFE32 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		CDED6EE22F47D370007C4421 /* CommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CD91B5BB2F47CD1200961211 /* BrewyTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BrewyTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		CD91B5B72F47CD1200961211 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DD0002000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -60,6 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				EE0002000000000000000002 /* Brewy */,
+				CD91B5BB2F47CD1200961211 /* BrewyTests */,
 				EE0005000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -107,6 +130,7 @@
 			isa = PBXGroup;
 			children = (
 				CC0001000000000000000001 /* Brewy.app */,
+				CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -114,6 +138,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		CD91B5B92F47CD1200961211 /* BrewyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD91B5C22F47CD1200961211 /* Build configuration list for PBXNativeTarget "BrewyTests" */;
+			buildPhases = (
+				CD91B5B62F47CD1200961211 /* Sources */,
+				CD91B5B72F47CD1200961211 /* Frameworks */,
+				CD91B5B82F47CD1200961211 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CD91B5BF2F47CD1200961211 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CD91B5BB2F47CD1200961211 /* BrewyTests */,
+			);
+			name = BrewyTests;
+			packageProductDependencies = (
+			);
+			productName = BrewyTests;
+			productReference = CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		FF0001000000000000000001 /* Brewy */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 110002000000000000000002 /* Build configuration list for PBXNativeTarget "Brewy" */;
@@ -138,11 +185,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1540;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					CD91B5B92F47CD1200961211 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = FF0001000000000000000001;
+					};
 					FF0001000000000000000001 = {
-						CreatedOnToolsVersion = 15.4;
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -163,11 +214,19 @@
 			projectRoot = "";
 			targets = (
 				FF0001000000000000000001 /* Brewy */,
+				CD91B5B92F47CD1200961211 /* BrewyTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		CD91B5B82F47CD1200961211 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DD0003000000000000000003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -179,6 +238,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		CD91B5B62F47CD1200961211 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DD0001000000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -200,6 +266,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CD91B5BF2F47CD1200961211 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FF0001000000000000000001 /* Brewy */;
+			targetProxy = CD91B5BE2F47CD1200961211 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		220001000000000000000001 /* Debug */ = {
@@ -237,6 +311,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 927JGANW46;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -301,6 +376,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 927JGANW46;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -335,7 +411,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 6;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 927JGANW46;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -381,7 +456,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 6;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 927JGANW46;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -414,6 +488,54 @@
 			};
 			name = Release;
 		};
+		CD91B5C02F47CD1200961211 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linnane.BrewyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Brewy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Brewy";
+			};
+			name = Debug;
+		};
+		CD91B5C12F47CD1200961211 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linnane.BrewyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Brewy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Brewy";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -431,6 +553,15 @@
 			buildConfigurations = (
 				220003000000000000000003 /* Debug */,
 				220004000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CD91B5C22F47CD1200961211 /* Build configuration list for PBXNativeTarget "BrewyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD91B5C02F47CD1200961211 /* Debug */,
+				CD91B5C12F47CD1200961211 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
