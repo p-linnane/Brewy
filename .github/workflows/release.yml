@@ -245,7 +245,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git"
+          cp appcast.xml "${RUNNER_TEMP}/appcast.xml"
+          git fetch origin appcast
+          git checkout appcast
+          cp "${RUNNER_TEMP}/appcast.xml" appcast.xml
           git add appcast.xml
           git diff --cached --quiet && exit 0
           git commit -m "Update appcast for ${TAG}"
-          git push origin main
+          git push origin appcast

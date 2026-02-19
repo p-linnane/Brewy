@@ -1,6 +1,9 @@
 # Claude Code
 .claude/
 
+# Appcast (lives on the appcast branch, not main)
+appcast.xml
+
 # macOS
 .DS_Store
 
