@@ -1,5 +1,9 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let showWhatsNew = Notification.Name("showWhatsNew")
+}
+
 // MARK: - Package Navigation Environment
 
 private struct SelectPackageActionKey: EnvironmentKey {
@@ -17,11 +21,13 @@ struct ContentView: View {
     @Environment(BrewService.self) private var brewService
     @AppStorage("autoRefreshInterval") private var autoRefreshInterval = 0
     @AppStorage("showCasksByDefault") private var showCasksByDefault = false
+    @AppStorage("lastSeenVersion") private var lastSeenVersion = ""
     @State private var selectedCategory: SidebarCategory? = .installed
     @State private var selectedPackage: BrewPackage?
     @State private var selectedTap: BrewTap?
     @State private var searchText = ""
     @State private var showError = false
+    @State private var showWhatsNew = false
 
     var body: some View {
         NavigationSplitView {
@@ -97,6 +103,19 @@ struct ContentView: View {
             Button("OK") { brewService.lastError = nil }
         } message: { error in
             Text(error.localizedDescription)
+        }
+        .sheet(isPresented: $showWhatsNew) {
+            WhatsNewView()
+        }
+        .onAppear {
+            let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+            if !currentVersion.isEmpty, currentVersion != lastSeenVersion {
+                lastSeenVersion = currentVersion
+                showWhatsNew = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showWhatsNew)) { _ in
+            showWhatsNew = true
         }
     }
 

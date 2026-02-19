@@ -18,6 +18,7 @@
 		AA0009000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0009000000000000000009 /* Assets.xcassets */; };
 		AA000B00000000000000000B /* TapListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000B00000000000000000B /* TapListView.swift */; };
 		AA000C00000000000000000C /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000C00000000000000000C /* MaintenanceView.swift */; };
+		CD0792452F47BAA300644F29 /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0792442F47BAA300644F29 /* WhatsNewView.swift */; };
 		CD94CDEA2F44419B00F87AD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = CD94CDE92F44419B00F87AD8 /* Sparkle */; };
 		CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC4C71C2F477969004EFE32 /* DiscoverView.swift */; };
 /* End PBXBuildFile section */
@@ -36,6 +37,7 @@
 		BB000B00000000000000000B /* TapListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapListView.swift; sourceTree = "<group>"; };
 		BB000C00000000000000000C /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceView.swift; sourceTree = "<group>"; };
 		CC0001000000000000000001 /* Brewy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brewy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD0792442F47BAA300644F29 /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		CD69630D2F479ED20033ABD8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CDC4C71C2F477969004EFE32 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -76,8 +78,8 @@
 		EE0003000000000000000003 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				BB0002000000000000000002 /* PackageModel.swift */,
 				BB0003000000000000000003 /* BrewService.swift */,
+				BB0002000000000000000002 /* PackageModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -93,6 +95,7 @@
 				BB0008000000000000000008 /* SettingsView.swift */,
 				BB0005000000000000000005 /* SidebarView.swift */,
 				BB000B00000000000000000B /* TapListView.swift */,
+				CD0792442F47BAA300644F29 /* WhatsNewView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -182,6 +185,7 @@
 				CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */,
 				AA0003000000000000000003 /* BrewService.swift in Sources */,
 				AA0004000000000000000004 /* ContentView.swift in Sources */,
+				CD0792452F47BAA300644F29 /* WhatsNewView.swift in Sources */,
 				AA0005000000000000000005 /* SidebarView.swift in Sources */,
 				AA0006000000000000000006 /* PackageListView.swift in Sources */,
 				AA0007000000000000000007 /* PackageDetailView.swift in Sources */,

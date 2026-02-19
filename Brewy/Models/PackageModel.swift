@@ -69,6 +69,89 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Appcast Release
+
+struct AppcastRelease: Identifiable {
+    let title: String
+    let pubDate: String?
+    let version: String?
+    let descriptionHTML: String?
+
+    var id: String { version ?? title }
+
+    var publishedDate: Date? {
+        guard let pubDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
+        return formatter.date(from: pubDate)
+    }
+}
+
+// MARK: - Appcast Parser
+
+final class AppcastParser: NSObject, XMLParserDelegate {
+    private var currentElement = ""
+    private var currentTitle = ""
+    private var currentPubDate = ""
+    private var currentVersion = ""
+    private var currentDescription = ""
+    private var release: AppcastRelease?
+    private var insideItem = false
+
+    func parse(data: Data) -> AppcastRelease? {
+        let parser = XMLParser(data: data)
+        parser.delegate = self
+        parser.parse()
+        return release
+    }
+
+    func parser(_ parser: XMLParser, didStartElement elementName: String,
+                namespaceURI: String?, qualifiedName: String?,
+                attributes: [String: String] = [:]) {
+        currentElement = elementName
+        if elementName == "item" {
+            insideItem = true
+            currentTitle = ""
+            currentPubDate = ""
+            currentVersion = ""
+            currentDescription = ""
+        }
+    }
+
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        guard insideItem else { return }
+        switch currentElement {
+        case "title": currentTitle += string
+        case "pubDate": currentPubDate += string
+        case "sparkle:shortVersionString": currentVersion += string
+        case "description": currentDescription += string
+        default: break
+        }
+    }
+
+    func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+        guard insideItem, currentElement == "description" else { return }
+        if let text = String(data: CDATABlock, encoding: .utf8) {
+            currentDescription += text
+        }
+    }
+
+    func parser(_ parser: XMLParser, didEndElement elementName: String,
+                namespaceURI: String?, qualifiedName: String?) {
+        if elementName == "item" {
+            release = AppcastRelease(
+                title: currentTitle.trimmingCharacters(in: .whitespacesAndNewlines),
+                pubDate: currentPubDate.trimmingCharacters(in: .whitespacesAndNewlines),
+                version: currentVersion.trimmingCharacters(in: .whitespacesAndNewlines),
+                descriptionHTML: currentDescription.isEmpty ? nil : currentDescription
+            )
+            insideItem = false
+        }
+        currentElement = ""
+    }
+}
+
 // MARK: - Brew Config
 
 struct BrewConfig {
