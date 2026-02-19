@@ -253,3 +253,30 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Update appcast for ${TAG}"
           git push origin appcast
+
+  bump-cask:
+    name: Bump Homebrew cask
+    needs: upload
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    env:
+      HOMEBREW_DEVELOPER: 1
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+        with:
+          cask: true
+
+      - name: Configure Git user
+        uses: Homebrew/actions/git-user-config@main
+        with:
+          username: fuyunohoshi
+
+      - name: Bump cask
+        env:
+          HOMEBREW_TEST_BOT_AUTOBUMP: 1
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+          HOMEBREW_GIT_COMMITTER_NAME: fuyunohoshi
+          HOMEBREW_GIT_COMMITTER_EMAIL: 165941061+fuyunohoshi@users.noreply.github.com
+        run: brew bump --no-fork --open-pr --casks brewy
