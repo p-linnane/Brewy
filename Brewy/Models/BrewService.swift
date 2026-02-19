@@ -88,6 +88,7 @@ final class BrewService {
         case .pinned: pinnedPackages
         case .leaves: leavesPackages
         case .taps: []
+        case .discover: searchResults
         case .maintenance: []
         }
     }
@@ -183,9 +184,11 @@ final class BrewService {
 
         isLoading = true
         lastError = nil
-        defer { isLoading = false }
 
-        searchResults = await performSearch(query: query)
+        let results = await performSearch(query: query)
+        guard !Task.isCancelled else { return }
+        searchResults = results
+        isLoading = false
     }
 
     func install(package: BrewPackage) async {
@@ -435,38 +438,41 @@ final class BrewService {
     }
 
     private func performSearch(query: String) async -> [BrewPackage] {
-        let result = await runBrewCommand(["search", "--formulae", "--casks", query])
-        guard result.success else { return [] }
+        async let formulaeResult = runBrewCommand(["search", "--formula", query])
+        async let casksResult = runBrewCommand(["search", "--cask", query])
 
-        let lines = result.output.components(separatedBy: "\n").filter { !$0.isEmpty }
+        let formulaeOutput = await formulaeResult
+        let casksOutput = await casksResult
+
         let knownNames = installedNames
         var packages: [BrewPackage] = []
-        packages.reserveCapacity(lines.count)
-        var isCaskSection = false
 
-        for line in lines {
-            if line.hasPrefix("==> Formulae") { isCaskSection = false; continue }
-            if line.hasPrefix("==> Casks") { isCaskSection = true; continue }
-            if line.hasPrefix("==>") { continue }
+        for output in [(formulaeOutput, false), (casksOutput, true)] {
+            let (result, isCask) = output
+            guard result.success else { continue }
 
-            let name = line.trimmingCharacters(in: .whitespaces)
-            guard !name.isEmpty else { continue }
+            let names = result.output
+                .components(separatedBy: "\n")
+                .flatMap { $0.split(whereSeparator: \.isWhitespace).map(String.init) }
+                .filter { !$0.isEmpty && !$0.hasPrefix("==>") }
 
-            packages.append(BrewPackage(
-                id: "\(isCaskSection ? "cask" : "formula")-search-\(name)",
-                name: name,
-                version: "",
-                description: "",
-                homepage: "",
-                isInstalled: knownNames.contains(name),
-                isOutdated: false,
-                installedVersion: nil,
-                latestVersion: nil,
-                isCask: isCaskSection,
-                pinned: false,
-                installedOnRequest: false,
-                dependencies: []
-            ))
+            for name in names {
+                packages.append(BrewPackage(
+                    id: "\(isCask ? "cask" : "formula")-search-\(name)",
+                    name: name,
+                    version: "",
+                    description: "",
+                    homepage: "",
+                    isInstalled: knownNames.contains(name),
+                    isOutdated: false,
+                    installedVersion: nil,
+                    latestVersion: nil,
+                    isCask: isCask,
+                    pinned: false,
+                    installedOnRequest: false,
+                    dependencies: []
+                ))
+            }
         }
 
         return packages

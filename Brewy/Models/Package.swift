@@ -49,6 +49,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case pinned = "Pinned"
     case leaves = "Leaves"
     case taps = "Taps"
+    case discover = "Discover"
     case maintenance = "Maintenance"
 
     var id: String { rawValue }
@@ -62,6 +63,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .pinned: "pin.fill"
         case .leaves: "leaf.fill"
         case .taps: "spigot.fill"
+        case .discover: "magnifyingglass"
         case .maintenance: "wrench.and.screwdriver.fill"
         }
     }
