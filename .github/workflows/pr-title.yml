@@ -1,0 +1,41 @@
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
+concurrency:
+  group: "pr-title-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read # required to read PR title
+    steps:
+      - name: Check PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'
+          if [[ ! "${PR_TITLE}" =~ ${PATTERN} ]]; then
+            echo "::error::PR title '${PR_TITLE}' does not follow Conventional Commits."
+            echo ""
+            echo "Expected format: <type>(<scope>): <description>"
+            echo ""
+            echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add Sparkle auto-update support"
+            echo "  fix(updater): resolve crash on empty appcast"
+            echo "  ci: automate appcast generation on release"
+            exit 1
+          fi

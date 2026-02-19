@@ -24,6 +24,7 @@ jobs:
     runs-on: macos-latest
     outputs:
       artifact_name: "Brewy-${{ github.ref_name }}.zip"
+      build_number: ${{ steps.build_number.outputs.build_number }}
     permissions:
       contents: read
       attestations: write # required to generate build provenance attestations
@@ -76,6 +77,13 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM}"
+
+      - name: Extract build number
+        id: build_number
+        run: |
+          BUILD_NUMBER=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleVersion" \
+            "${RUNNER_TEMP}/Brewy.xcarchive/Info.plist")
+          echo "build_number=${BUILD_NUMBER}" >> "${GITHUB_OUTPUT}"
 
       - name: Export
         run: |
@@ -151,7 +159,23 @@ jobs:
             "${RUNNER_TEMP}/staple/Brewy.app" \
             "${ARTIFACT_NAME}"
 
-      - name: Create draft release
+      - name: Download Sparkle
+        run: |
+          curl -L -o "${RUNNER_TEMP}/sparkle.tar.xz" \
+            "https://github.com/sparkle-project/Sparkle/releases/download/2.8.1/Sparkle-2.8.1.tar.xz"
+          mkdir -p "${RUNNER_TEMP}/sparkle"
+          tar xf "${RUNNER_TEMP}/sparkle.tar.xz" -C "${RUNNER_TEMP}/sparkle"
+
+      - name: Sign update with Sparkle EdDSA
+        env:
+          SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+        run: |
+          SIG_OUTPUT=$("${RUNNER_TEMP}/sparkle/bin/sign_update" "${ARTIFACT_NAME}" 2>&1)
+          echo "SPARKLE_SIG=$(echo "${SIG_OUTPUT}" | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)" >> "${GITHUB_ENV}"
+          echo "SPARKLE_LENGTH=$(echo "${SIG_OUTPUT}" | grep -o 'length="[^"]*"' | cut -d'"' -f2)" >> "${GITHUB_ENV}"
+
+      - name: Create release with generated notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -161,6 +185,56 @@ jobs:
           gh release create "${TAG}" \
             --repo "${REPOSITORY}" \
             --title "${TAG}" \
-            --draft \
             --generate-notes \
             "${ARTIFACT_NAME}"
+          gh release view "${TAG}" \
+            --repo "${REPOSITORY}" \
+            --json body \
+            --jq '.body' > "${RUNNER_TEMP}/raw_notes.md"
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Format release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 .github/format-release-notes.py \
+            "${RUNNER_TEMP}/raw_notes.md" "${TAG}" \
+            > "${RUNNER_TEMP}/formatted_notes.md"
+          python3 .github/format-release-notes.py \
+            "${RUNNER_TEMP}/raw_notes.md" "${TAG}" --html \
+            > "${RUNNER_TEMP}/release_notes.html"
+          gh release edit "${TAG}" \
+            --repo "${REPOSITORY}" \
+            --notes-file "${RUNNER_TEMP}/formatted_notes.md"
+
+      - name: Update appcast
+        env:
+          TAG: ${{ github.ref_name }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+          REPOSITORY: ${{ github.repository }}
+          BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
+        run: |
+          export PUBDATE="$(date -u '+%a, %d %b %Y %H:%M:%S %z')"
+          export DOWNLOAD_URL="https://github.com/${REPOSITORY}/releases/download/${TAG}/${ARTIFACT_NAME}"
+          export RELEASE_NOTES_HTML="$(cat "${RUNNER_TEMP}/release_notes.html")"
+          envsubst < .github/appcast-template.xml > appcast.xml
+
+      - name: Push appcast
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git"
+          git add appcast.xml
+          git diff --cached --quiet && exit 0
+          git commit -m "Update appcast for ${TAG}"
+          git push origin main
