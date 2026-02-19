@@ -69,6 +69,12 @@ final class BrewService {
         allInstalled.filter(\.pinned)
     }
 
+    var leavesPackages: [BrewPackage] {
+        installedFormulae.filter { pkg in
+            (reverseDependencies[pkg.name] ?? []).isEmpty
+        }
+    }
+
     func dependents(of name: String) -> [BrewPackage] {
         reverseDependencies[name] ?? []
     }
@@ -80,6 +86,7 @@ final class BrewService {
         case .casks: installedCasks
         case .outdated: outdatedPackages
         case .pinned: pinnedPackages
+        case .leaves: leavesPackages
         case .taps: []
         case .maintenance: []
         }

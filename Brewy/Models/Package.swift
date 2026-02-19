@@ -47,6 +47,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case casks = "Casks"
     case outdated = "Outdated"
     case pinned = "Pinned"
+    case leaves = "Leaves"
     case taps = "Taps"
     case maintenance = "Maintenance"
 
@@ -59,6 +60,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .casks: "macwindow"
         case .outdated: "arrow.triangle.2.circlepath"
         case .pinned: "pin.fill"
+        case .leaves: "leaf.fill"
         case .taps: "spigot.fill"
         case .maintenance: "wrench.and.screwdriver.fill"
         }

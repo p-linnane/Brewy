@@ -60,6 +60,7 @@ private struct SidebarRow: View {
         case .casks: .purple
         case .outdated: .orange
         case .pinned: .red
+        case .leaves: .mint
         case .taps: .teal
         case .maintenance: .indigo
         }
