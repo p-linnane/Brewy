@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/p-linnane/Brewy/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/p-linnane/Brewy/appcast/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>bDdj4oLQDw8Ut2IoUsIH2DbaP5eSqtkqXS1fSjd3/6s=</string>
 </dict>
