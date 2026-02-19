@@ -10,10 +10,17 @@ struct BrewyApp: App {
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     }
 
+    @AppStorage("appTheme") private var appTheme = AppTheme.system.rawValue
+
+    private var preferredColorScheme: ColorScheme? {
+        AppTheme(rawValue: appTheme)?.colorScheme
+    }
+
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView()
                 .environment(brewService)
+                .preferredColorScheme(preferredColorScheme)
         }
         .windowStyle(.automatic)
         .defaultSize(width: 960, height: 640)
