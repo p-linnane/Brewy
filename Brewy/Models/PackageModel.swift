@@ -22,7 +22,7 @@ struct BrewPackage: Identifiable, Hashable, Codable {
         return version
     }
 
-    static func == (lhs: BrewPackage, rhs: BrewPackage) -> Bool {
+    static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
@@ -160,7 +160,7 @@ struct BrewConfig {
     let coreTapLastCommit: String?
     let coreCaskTapLastCommit: String?
 
-    static func parse(from output: String) -> BrewConfig {
+    static func parse(from output: String) -> Self {
         var values: [String: String] = [:]
         for line in output.components(separatedBy: "\n") {
             guard let colonIndex = line.firstIndex(of: ":") else { continue }
@@ -168,7 +168,7 @@ struct BrewConfig {
             let value = line[line.index(after: colonIndex)...].trimmingCharacters(in: .whitespaces)
             values[key] = value
         }
-        return BrewConfig(
+        return Self(
             version: values["HOMEBREW_VERSION"],
             homebrewLastCommit: values["Last commit"],
             coreTapLastCommit: values["Core tap last commit"],
@@ -199,7 +199,12 @@ struct FormulaJSON: Decodable {
 
     struct FormulaInstalled: Decodable {
         let version: String?
-        let installed_on_request: Bool?
+        let installedOnRequest: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case version
+            case installedOnRequest = "installed_on_request"
+        }
     }
 
     func toPackage() -> BrewPackage {
@@ -217,7 +222,7 @@ struct FormulaJSON: Decodable {
             latestVersion: stable,
             isCask: false,
             pinned: pinned ?? false,
-            installedOnRequest: installed?.first?.installed_on_request ?? false,
+            installedOnRequest: installed?.first?.installedOnRequest ?? false,
             dependencies: dependencies ?? []
         )
     }
@@ -230,16 +235,16 @@ struct CaskJSON: Decodable {
     let homepage: String?
 
     func toPackage() -> BrewPackage {
-        let v = version ?? "unknown"
+        let resolvedVersion = version ?? "unknown"
         return BrewPackage(
             id: "cask-\(token)",
             name: token,
-            version: v,
+            version: resolvedVersion,
             description: desc ?? "",
             homepage: homepage ?? "",
             isInstalled: true,
             isOutdated: false,
-            installedVersion: v,
+            installedVersion: resolvedVersion,
             latestVersion: nil,
             isCask: true,
             pinned: false,
@@ -256,21 +261,28 @@ struct BrewOutdatedResponse: Decodable {
 
 struct OutdatedFormulaJSON: Decodable {
     let name: String
-    let installed_versions: [String]?
-    let current_version: String?
+    let installedVersions: [String]?
+    let currentVersion: String?
     let pinned: Bool?
 
+    enum CodingKeys: String, CodingKey {
+        case name
+        case installedVersions = "installed_versions"
+        case currentVersion = "current_version"
+        case pinned
+    }
+
     func toPackage() -> BrewPackage? {
-        guard let currentVersion = current_version else { return nil }
+        guard let currentVersion else { return nil }
         return BrewPackage(
             id: "formula-\(name)",
             name: name,
-            version: installed_versions?.first ?? "unknown",
+            version: installedVersions?.first ?? "unknown",
             description: "",
             homepage: "",
             isInstalled: true,
             isOutdated: true,
-            installedVersion: installed_versions?.first,
+            installedVersion: installedVersions?.first,
             latestVersion: currentVersion,
             isCask: false,
             pinned: pinned ?? false,
@@ -282,12 +294,18 @@ struct OutdatedFormulaJSON: Decodable {
 
 struct OutdatedCaskJSON: Decodable {
     let name: String
-    let installed_versions: String?
-    let current_version: String?
+    let installedVersions: String?
+    let currentVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case installedVersions = "installed_versions"
+        case currentVersion = "current_version"
+    }
 
     func toPackage() -> BrewPackage? {
-        guard let currentVersion = current_version,
-              let installedVersions = installed_versions else { return nil }
+        guard let currentVersion,
+              let installedVersions else { return nil }
         return BrewPackage(
             id: "cask-\(name)",
             name: name,
@@ -310,18 +328,26 @@ struct TapJSON: Decodable {
     let name: String
     let remote: String?
     let official: Bool?
-    let formula_names: [String]?
-    let cask_tokens: [String]?
+    let formulaNames: [String]?
+    let caskTokens: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case remote
+        case official
+        case formulaNames = "formula_names"
+        case caskTokens = "cask_tokens"
+    }
 
     func toTap() -> BrewTap {
-        var r = remote ?? ""
-        if r.hasSuffix(".git") { r = String(r.dropLast(4)) }
+        var resolvedRemote = remote ?? ""
+        if resolvedRemote.hasSuffix(".git") { resolvedRemote = String(resolvedRemote.dropLast(4)) }
         return BrewTap(
             name: name,
-            remote: r,
+            remote: resolvedRemote,
             isOfficial: official ?? false,
-            formulaNames: formula_names ?? [],
-            caskTokens: cask_tokens ?? []
+            formulaNames: formulaNames ?? [],
+            caskTokens: caskTokens ?? []
         )
     }
 }
