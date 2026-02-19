@@ -33,6 +33,9 @@ struct ContentView: View {
             if selectedCategory == .taps {
                 TapListView(selectedTap: $selectedTap)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
+            } else if selectedCategory == .discover {
+                DiscoverView(selectedPackage: $selectedPackage)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .maintenance {
                 MaintenanceView()
                     .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
