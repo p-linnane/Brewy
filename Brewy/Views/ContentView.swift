@@ -42,6 +42,7 @@ struct ContentView: View {
                     selectedPackage: $selectedPackage,
                     searchText: $searchText
                 )
+                .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             }
         } detail: {
             if selectedCategory == .maintenance {
@@ -60,8 +61,10 @@ struct ContentView: View {
                 let isOutdated = brewService.outdatedPackages.contains { $0.id == selectedPackage.id }
                 PackageDetailView(package: package)
                     .id(isOutdated)
+                    .navigationSplitViewColumnWidth(min: 350, ideal: 450)
             } else {
                 EmptyStateView()
+                    .navigationSplitViewColumnWidth(min: 350, ideal: 450)
             }
         }
         .environment(\.selectPackage) { [self] name in navigateToPackage(name) }
