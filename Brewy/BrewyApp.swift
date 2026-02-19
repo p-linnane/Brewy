@@ -45,6 +45,11 @@ struct BrewyApp: App {
                     Task { await brewService.cleanup() }
                 }
             }
+            CommandGroup(replacing: .help) {
+                Button("What's New") {
+                    NotificationCenter.default.post(name: .showWhatsNew, object: nil)
+                }
+            }
         }
 
         Settings {
