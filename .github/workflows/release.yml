@@ -273,10 +273,25 @@ jobs:
         with:
           username: fuyunohoshi
 
+      - name: Prune stale branches on fork
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          gh api "repos/fuyunohoshi/homebrew-cask/branches" \
+            --paginate --jq '.[].name | select(startswith("bump-"))' |
+          while read -r branch; do
+            gh api -X DELETE "repos/fuyunohoshi/homebrew-cask/git/refs/heads/${branch}" || true
+          done
+
+      - name: Sync fork
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: gh repo sync fuyunohoshi/homebrew-cask --source Homebrew/homebrew-cask --force
+
       - name: Bump cask
         env:
           HOMEBREW_TEST_BOT_AUTOBUMP: 1
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
           HOMEBREW_GIT_COMMITTER_NAME: fuyunohoshi
           HOMEBREW_GIT_COMMITTER_EMAIL: 165941061+fuyunohoshi@users.noreply.github.com
-        run: brew bump --no-fork --open-pr --casks brewy
+        run: brew bump --open-pr --casks brewy
