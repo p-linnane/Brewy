@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Brewy</title>
+        <item>
+            <title>0.4.1</title>
+            <pubDate>Thu, 19 Feb 2026 21:03:58 +0000</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.4.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>What&#x27;s New</h2>
+<ul>
+  <li>add Sparkle appcast and automated release notes</li>
+</ul>
+<h2>Under the Hood</h2>
+<ul>
+  <li>switch release workflow to workflow_dispatch</li>
+  <li>bump version to 0.4.0</li>
+  <li>remove CodeQL concurrency cancellation</li>
+  <li>reference SPARKLE_PRIVATE_KEY secret for EdDSA signing</li>
+  <li>move appcast to dedicated branch</li>
+  <li>bump version to 0.4.1</li>
+</ul>]]></description>
+            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.4.1/Brewy-0.4.1.zip" length="5241313" type="application/octet-stream" sparkle:edSignature="f0T+el0cItQjKW0R8160QUET/xK+bEVgk64y4Rcf9KJ3Zv7yUnN3CSQvvtI/2p7SXtuSb7Nb0St8wgJY360YAQ=="/>
+        </item>
+    </channel>
+</rss>
