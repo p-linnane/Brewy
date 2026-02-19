@@ -95,14 +95,14 @@ final class BrewService {
 
     // MARK: - Cache
 
-    private nonisolated static let cacheDirectory: URL = {
+    nonisolated private static let cacheDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Brewy", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
 
-    private nonisolated static let cacheURL = cacheDirectory.appendingPathComponent("packageCache.json")
+    nonisolated private static let cacheURL = cacheDirectory.appendingPathComponent("packageCache.json")
 
     private struct CachedData: Codable {
         let formulae: [BrewPackage]
@@ -478,7 +478,7 @@ final class BrewService {
         return packages
     }
 
-    private nonisolated static func mergeOutdatedStatus(
+    nonisolated private static func mergeOutdatedStatus(
         _ pkg: BrewPackage,
         outdatedByID: [String: BrewPackage]
     ) -> BrewPackage {
