@@ -8,15 +8,17 @@ A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, se
 
 ## Features
 
-- Browse installed formulae and casks
-- Search Homebrew/core and Homebrew/cask repositories
+- Browse installed formulae and casks, including pinned packages and leaves
+- Discover and search all Homebrew/core and Homebrew/cask packages
 - View package details, dependencies, and reverse dependencies
 - Install, uninstall, upgrade, pin, and unpin packages
-- Upgrade all outdated packages at once
+- Upgrade all outdated packages at once, or select specific packages to upgrade
 - Manage taps (add/remove third-party repositories)
 - Run `brew doctor`, remove orphaned packages, and clear the download cache
 - Menu bar extra showing outdated package count
 - Configurable auto-refresh interval and brew path
+- Light, dark, and system theme support
+- Auto-updates via Sparkle
 
 ![Brewy demo](assets/BrewyDemo.gif)
 
@@ -33,7 +35,7 @@ The best way to install Brewy is naturally with Homebrew:
 brew install brewy
 ```
 
-You can also grab the latest release from the [GitHub releases page](https://github.com/p-linnane/brewy/releases). Sparkle autoupdate support is coming soon.
+You can also grab the latest release from the [GitHub releases page](https://github.com/p-linnane/brewy/releases).
 
 ## Building
 
