@@ -18,6 +18,7 @@
 		AA0009000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0009000000000000000009 /* Assets.xcassets */; };
 		AA000B00000000000000000B /* TapListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000B00000000000000000B /* TapListView.swift */; };
 		AA000C00000000000000000C /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000C00000000000000000C /* MaintenanceView.swift */; };
+		CD69630E2F479ED20033ABD8 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD69630D2F479ED20033ABD8 /* Info.plist */; };
 		CD94CDEA2F44419B00F87AD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = CD94CDE92F44419B00F87AD8 /* Sparkle */; };
 		CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC4C71C2F477969004EFE32 /* DiscoverView.swift */; };
 /* End PBXBuildFile section */
@@ -36,6 +37,7 @@
 		BB000B00000000000000000B /* TapListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapListView.swift; sourceTree = "<group>"; };
 		BB000C00000000000000000C /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceView.swift; sourceTree = "<group>"; };
 		CC0001000000000000000001 /* Brewy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brewy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD69630D2F479ED20033ABD8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CDC4C71C2F477969004EFE32 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -62,6 +64,7 @@
 		EE0002000000000000000002 /* Brewy */ = {
 			isa = PBXGroup;
 			children = (
+				CD69630D2F479ED20033ABD8 /* Info.plist */,
 				BB0001000000000000000001 /* BrewyApp.swift */,
 				EE0003000000000000000003 /* Models */,
 				EE0004000000000000000004 /* Views */,
@@ -164,6 +167,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD69630E2F479ED20033ABD8 /* Info.plist in Resources */,
 				AA0009000000000000000009 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -335,6 +339,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				EXCLUDED_ARCHS = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Brewy/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Patrick Linnane. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -380,6 +385,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				EXCLUDED_ARCHS = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Brewy/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Patrick Linnane. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (

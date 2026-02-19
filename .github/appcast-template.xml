@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Brewy</title>
+        <item>
+            <title>${TAG}</title>
+            <pubDate>${PUBDATE}</pubDate>
+            <sparkle:version>${BUILD_NUMBER}</sparkle:version>
+            <sparkle:shortVersionString>${TAG}</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[${RELEASE_NOTES_HTML}]]></description>
+            <enclosure url="${DOWNLOAD_URL}" length="${SPARKLE_LENGTH}" type="application/octet-stream" sparkle:edSignature="${SPARKLE_SIG}"/>
+        </item>
+    </channel>
+</rss>
