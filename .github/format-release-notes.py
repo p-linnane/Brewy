@@ -20,13 +20,13 @@ SECTIONS = {
     "fix": "Fixes",
     "perf": "Performance",
     "refactor": "Under the Hood",
-    "build": "Under the Hood",
-    "ci": "Under the Hood",
-    "chore": "Under the Hood",
     "docs": "Documentation",
     "style": "Style",
     "test": "Testing",
 }
+
+# Skip changes that aren't relevant to end users
+SKIP_TYPES = {"build", "ci", "chore"}
 
 # PR line pattern from --generate-notes:
 #   * feat(scope): description by @user in https://...
@@ -62,10 +62,7 @@ def parse_notes(raw: str) -> tuple[dict[str, list[str]], str | None]:
         pr_type = pr_match.group("type") or ""
         desc = pr_match.group("desc").strip()
 
-        # Skip release prep commits.
-        if pr_type == "" and desc.lower().startswith("prepare"):
-            continue
-        if pr_type == "chore" and "release" in desc.lower():
+        if pr_type in SKIP_TYPES:
             continue
 
         section = SECTIONS.get(pr_type, "Other")
