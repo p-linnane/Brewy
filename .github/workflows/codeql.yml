@@ -8,13 +8,13 @@ on:
       - '**/*.swift'
       - '*.xcodeproj/**'
 
+concurrency:
+  group: "codeql-${{ github.ref }}"
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash -xeuo pipefail {0}
-
-concurrency:
-  group: "codeql-${{ github.ref }}"
-  cancel-in-progress: true
 
 permissions: {}
 
