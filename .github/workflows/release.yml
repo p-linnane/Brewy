@@ -183,7 +183,10 @@ jobs:
           SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
         run: |
-          SIG_OUTPUT=$("${RUNNER_TEMP}/sparkle/bin/sign_update" "${ARTIFACT_NAME}" 2>&1)
+          SPARKLE_KEY_FILE="${RUNNER_TEMP}/sparkle_private_key"
+          echo "${SPARKLE_KEY}" > "${SPARKLE_KEY_FILE}"
+          SIG_OUTPUT=$("${RUNNER_TEMP}/sparkle/bin/sign_update" "${ARTIFACT_NAME}" --ed-key-file "${SPARKLE_KEY_FILE}" 2>&1)
+          rm -f "${SPARKLE_KEY_FILE}"
           echo "SPARKLE_SIG=$(echo "${SIG_OUTPUT}" | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)" >> "${GITHUB_ENV}"
           echo "SPARKLE_LENGTH=$(echo "${SIG_OUTPUT}" | grep -o 'length="[^"]*"' | cut -d'"' -f2)" >> "${GITHUB_ENV}"
 
