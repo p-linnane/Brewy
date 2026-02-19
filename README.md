@@ -1,5 +1,7 @@
 # Brewy: A Homebrew GUI
 
+<p align="center"><img src="assets/BrewyIcon.png" alt="Brewy icon" width="128"></p>
+
 A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, search, install, and update formulae and casks — all without opening Terminal.
 
 > **Note:** Brewy is in early development and currently provides only basic functionality. Expect rough edges, missing features, and breaking changes.
@@ -15,6 +17,8 @@ A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, se
 - Run `brew doctor`, remove orphaned packages, and clear the download cache
 - Menu bar extra showing outdated package count
 - Configurable auto-refresh interval and brew path
+
+![Brewy demo](assets/BrewyDemo.gif)
 
 ## Requirements
 
