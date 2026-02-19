@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA0001000000000000000001 /* BrewyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* BrewyApp.swift */; };
-		AA0002000000000000000002 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002000000000000000002 /* Package.swift */; };
+		AA0002000000000000000002 /* PackageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002000000000000000002 /* PackageModel.swift */; };
 		AA0003000000000000000003 /* BrewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003000000000000000003 /* BrewService.swift */; };
 		AA0004000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0004000000000000000004 /* ContentView.swift */; };
 		AA0005000000000000000005 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0005000000000000000005 /* SidebarView.swift */; };
@@ -24,7 +24,7 @@
 
 /* Begin PBXFileReference section */
 		BB0001000000000000000001 /* BrewyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewyApp.swift; sourceTree = "<group>"; };
-		BB0002000000000000000002 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		BB0002000000000000000002 /* PackageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageModel.swift; sourceTree = "<group>"; };
 		BB0003000000000000000003 /* BrewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewService.swift; sourceTree = "<group>"; };
 		BB0004000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BB0005000000000000000005 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
@@ -74,7 +74,7 @@
 		EE0003000000000000000003 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				BB0002000000000000000002 /* Package.swift */,
+				BB0002000000000000000002 /* PackageModel.swift */,
 				BB0003000000000000000003 /* BrewService.swift */,
 			);
 			path = Models;
@@ -176,7 +176,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001000000000000000001 /* BrewyApp.swift in Sources */,
-				AA0002000000000000000002 /* Package.swift in Sources */,
+				AA0002000000000000000002 /* PackageModel.swift in Sources */,
 				CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */,
 				AA0003000000000000000003 /* BrewService.swift in Sources */,
 				AA0004000000000000000004 /* ContentView.swift in Sources */,
@@ -353,7 +353,7 @@
 				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -398,7 +398,7 @@
 				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
