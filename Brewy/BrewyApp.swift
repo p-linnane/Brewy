@@ -12,6 +12,17 @@ struct BrewyApp: App {
 
     @AppStorage("appTheme") private var appTheme = AppTheme.system.rawValue
 
+    // HACK: there is a known color scheme bug in SwiftUI where passing `nil` to `.preferredColorScheme`
+    // doesn't change the color of some elements:
+    // https://stackoverflow.com/questions/76123702/preferredcolorschemenil-visual-bug-when-switching-to-system-light-dark-more
+    private var systemColorScheme: ColorScheme? {
+        switch NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) {
+        case .aqua: .light
+        case .darkAqua: .dark
+        default: nil
+        }
+    }
+
     private var preferredColorScheme: ColorScheme? {
         AppTheme(rawValue: appTheme)?.colorScheme
     }
@@ -20,7 +31,7 @@ struct BrewyApp: App {
         WindowGroup(id: "main") {
             ContentView()
                 .environment(brewService)
-                .preferredColorScheme(preferredColorScheme)
+                .preferredColorScheme(preferredColorScheme ?? systemColorScheme)
         }
         .windowStyle(.automatic)
         .defaultSize(width: 960, height: 640)
