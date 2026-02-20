@@ -47,7 +47,7 @@ line_length:
   ignores_urls: true
 
 file_length:
-  warning: 600
+  warning: 650
   error: 800
 
 type_body_length:

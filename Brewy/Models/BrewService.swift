@@ -1,5 +1,10 @@
 import Foundation
+import OSLog
 import SwiftUI
+
+// MARK: - Logging
+
+private let logger = Logger(subsystem: "com.linnane.brewy", category: "BrewService")
 
 // MARK: - Error Types
 
@@ -7,6 +12,7 @@ enum BrewError: LocalizedError {
     case brewNotFound(path: String)
     case commandFailed(command: String, output: String)
     case parseFailed(command: String)
+    case commandTimedOut(command: String)
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +22,8 @@ enum BrewError: LocalizedError {
             return output
         case .parseFailed(let command):
             return "Failed to parse output from: brew \(command)"
+        case .commandTimedOut(let command):
+            return "Command timed out: brew \(command)"
         }
     }
 }
@@ -113,14 +121,19 @@ final class BrewService {
     }
 
     func loadFromCache() {
-        guard let data = try? Data(contentsOf: Self.cacheURL),
-              let cached = try? JSONDecoder().decode(CachedData.self, from: data) else { return }
-        installedFormulae = cached.formulae
-        installedCasks = cached.casks
-        outdatedPackages = cached.outdated
-        installedTaps = cached.taps
-        tapsLoaded = !cached.taps.isEmpty
-        lastUpdated = cached.lastUpdated
+        do {
+            let data = try Data(contentsOf: Self.cacheURL)
+            let cached = try JSONDecoder().decode(CachedData.self, from: data)
+            installedFormulae = cached.formulae
+            installedCasks = cached.casks
+            outdatedPackages = cached.outdated
+            installedTaps = cached.taps
+            tapsLoaded = !cached.taps.isEmpty
+            lastUpdated = cached.lastUpdated
+            logger.info("Loaded \(cached.formulae.count) formulae and \(cached.casks.count) casks from cache")
+        } catch {
+            logger.warning("Failed to load cache: \(error.localizedDescription)")
+        }
     }
 
     private func saveToCache() {
@@ -132,13 +145,20 @@ final class BrewService {
             lastUpdated: lastUpdated ?? Date()
         )
         Task.detached(priority: .utility) {
-            try? JSONEncoder().encode(cached).write(to: Self.cacheURL, options: .atomic)
+            do {
+                let data = try JSONEncoder().encode(cached)
+                try data.write(to: Self.cacheURL, options: .atomic)
+                logger.debug("Cache saved successfully")
+            } catch {
+                logger.error("Failed to save cache: \(error.localizedDescription)")
+            }
         }
     }
 
     // MARK: - Homebrew CLI Interactions
 
     func refresh() async {
+        logger.info("Starting full refresh")
         infoCache.removeAll()
         let hadCachedData = !installedFormulae.isEmpty || !installedCasks.isEmpty
         if !hadCachedData {
@@ -166,6 +186,7 @@ final class BrewService {
         installedTaps = await fetchTaps()
         tapsLoaded = true
 
+        logger.info("Refresh complete: \(fetchedFormulae.count) formulae, \(fetchedCasks.count) casks, \(fetchedOutdated.count) outdated")
         saveToCache()
     }
 
@@ -242,10 +263,15 @@ final class BrewService {
     func cleanup() async {
         isPerformingAction = true
         actionOutput = ""
+        lastError = nil
         defer { isPerformingAction = false }
 
         let result = await runBrewCommand(["cleanup", "--prune=all"])
         actionOutput = result.output
+        if !result.success {
+            logger.warning("Cleanup failed: \(result.output)")
+            lastError = .commandFailed(command: "cleanup", output: result.output)
+        }
     }
 
     func addTap(name: String) async {
@@ -343,7 +369,9 @@ final class BrewService {
                    let sizeKB = Int64(sizeStr) {
                     return sizeKB * 1024
                 }
-            } catch {}
+            } catch {
+                logger.warning("Failed to calculate cache size: \(error.localizedDescription)")
+            }
             return Int64(0)
         }.value
         return duResult
@@ -378,6 +406,7 @@ final class BrewService {
     // MARK: - Private Helpers
 
     private func performAction(_ action: String, package: BrewPackage) async {
+        logger.info("Performing \(action) on \(package.name)")
         isPerformingAction = true
         actionOutput = ""
         lastError = nil
@@ -390,6 +419,7 @@ final class BrewService {
         let result = await runBrewCommand(args)
         actionOutput = result.output
         if !result.success {
+            logger.warning("\(action) failed for \(package.name): \(result.output.prefix(200))")
             lastError = .commandFailed(command: action, output: result.output)
         }
         await refresh()
@@ -397,43 +427,75 @@ final class BrewService {
 
     private func fetchInstalledFormulae() async -> [BrewPackage] {
         let result = await runBrewCommand(["info", "--installed", "--json=v2"])
-        guard result.success, let data = result.output.data(using: .utf8) else { return [] }
+        guard result.success, let data = result.output.data(using: .utf8) else {
+            logger.warning("Failed to fetch installed formulae")
+            return []
+        }
 
         return await Task.detached(priority: .userInitiated) {
-            guard let response = try? JSONDecoder().decode(BrewInfoResponse.self, from: data) else { return [] }
-            return (response.formulae ?? []).map { $0.toPackage() }
+            do {
+                let response = try JSONDecoder().decode(BrewInfoResponse.self, from: data)
+                return (response.formulae ?? []).map { $0.toPackage() }
+            } catch {
+                logger.error("Failed to parse formulae JSON: \(error.localizedDescription)")
+                return []
+            }
         }.value
     }
 
     private func fetchInstalledCasks() async -> [BrewPackage] {
         let result = await runBrewCommand(["info", "--installed", "--cask", "--json=v2"])
-        guard result.success, let data = result.output.data(using: .utf8) else { return [] }
+        guard result.success, let data = result.output.data(using: .utf8) else {
+            logger.warning("Failed to fetch installed casks")
+            return []
+        }
 
         return await Task.detached(priority: .userInitiated) {
-            guard let response = try? JSONDecoder().decode(BrewInfoResponse.self, from: data) else { return [] }
-            return (response.casks ?? []).map { $0.toPackage() }
+            do {
+                let response = try JSONDecoder().decode(BrewInfoResponse.self, from: data)
+                return (response.casks ?? []).map { $0.toPackage() }
+            } catch {
+                logger.error("Failed to parse casks JSON: \(error.localizedDescription)")
+                return []
+            }
         }.value
     }
 
     private func fetchOutdatedPackages() async -> [BrewPackage] {
         let result = await runBrewCommand(["outdated", "--json=v2"])
-        guard result.success, let data = result.output.data(using: .utf8) else { return [] }
+        guard result.success, let data = result.output.data(using: .utf8) else {
+            logger.warning("Failed to fetch outdated packages")
+            return []
+        }
 
         return await Task.detached(priority: .userInitiated) {
-            guard let response = try? JSONDecoder().decode(BrewOutdatedResponse.self, from: data) else { return [] }
-            let formulae = (response.formulae ?? []).compactMap { $0.toPackage() }
-            let casks = (response.casks ?? []).compactMap { $0.toPackage() }
-            return formulae + casks
+            do {
+                let response = try JSONDecoder().decode(BrewOutdatedResponse.self, from: data)
+                let formulae = (response.formulae ?? []).compactMap { $0.toPackage() }
+                let casks = (response.casks ?? []).compactMap { $0.toPackage() }
+                return formulae + casks
+            } catch {
+                logger.error("Failed to parse outdated JSON: \(error.localizedDescription)")
+                return []
+            }
         }.value
     }
 
     private func fetchTaps() async -> [BrewTap] {
         let result = await runBrewCommand(["tap-info", "--json=v1", "--installed"])
-        guard result.success, let data = result.output.data(using: .utf8) else { return [] }
+        guard result.success, let data = result.output.data(using: .utf8) else {
+            logger.warning("Failed to fetch taps")
+            return []
+        }
 
         return await Task.detached(priority: .userInitiated) {
-            guard let taps = try? JSONDecoder().decode([TapJSON].self, from: data) else { return [] }
-            return taps.map { $0.toTap() }
+            do {
+                let taps = try JSONDecoder().decode([TapJSON].self, from: data)
+                return taps.map { $0.toTap() }
+            } catch {
+                logger.error("Failed to parse taps JSON: \(error.localizedDescription)")
+                return []
+            }
         }.value
     }
 
@@ -505,6 +567,8 @@ final class BrewService {
 
     private func runBrewCommand(_ arguments: [String]) async -> CommandResult {
         let brewPath = resolvedBrewPath()
+        let commandDescription = "brew \(arguments.joined(separator: " "))"
+        logger.info("Running: \(commandDescription)")
         return await Task.detached(priority: .userInitiated) {
             let process = Process()
             let stdoutPipe = Pipe()
@@ -536,6 +600,7 @@ final class BrewService {
 
                 return CommandResult(output: combinedOutput, success: process.terminationStatus == 0)
             } catch {
+                logger.error("Failed to launch process: \(error.localizedDescription)")
                 return CommandResult(
                     output: "Failed to run brew: \(error.localizedDescription)",
                     success: false
