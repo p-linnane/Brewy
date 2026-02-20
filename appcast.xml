@@ -3,20 +3,25 @@
     <channel>
         <title>Brewy</title>
         <item>
-            <title>0.5.0</title>
-            <pubDate>Thu, 19 Feb 2026 22:29:39 +0000</pubDate>
-            <sparkle:version>6</sparkle:version>
-            <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+            <title>0.5.2</title>
+            <pubDate>Fri, 20 Feb 2026 00:38:14 +0000</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>0.5.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <description><![CDATA[<h2>What&#x27;s New</h2>
 <ul>
-  <li>add What&#x27;s New view with appcast release notes</li>
+  <li>add os.Logger diagnostics and improve error handling</li>
+  <li>add test suite with CI, sanitizers, and code coverage</li>
 </ul>
-<h2>Documentation</h2>
+<h2>Under the Hood</h2>
 <ul>
-  <li>update README and clean up release notes formatter</li>
+  <li>extract CommandRunner with timeout and cancellation</li>
+</ul>
+<h2>Other</h2>
+<ul>
+  <li>@dependabot[bot] made their first contribution</li>
 </ul>]]></description>
-            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.5.0/Brewy-0.5.0.zip" length="5266107" type="application/octet-stream" sparkle:edSignature="CLTDsqZVVFxQ/UG9nzdLHO0zyOk3Y5SMXVl/Pz/L4RVI0okduS8unC1lbg4xWFcZE8xlK1k7huqddBYK24kLCw=="/>
+            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.5.2/Brewy-0.5.2.zip" length="5277953" type="application/octet-stream" sparkle:edSignature="XifoE5OKekXxmR2HBrmTu+HWVg6tOofYORXxPZw2AUWYjS+f5RNGl32Q5La9beOcvJqLBJS79GpRCHdUu3AWBA=="/>
         </item>
     </channel>
 </rss>
