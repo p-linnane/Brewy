@@ -1,7 +1,11 @@
-name: Build
+name: Test
 
 on:
   pull_request:
+    paths:
+      - "**/*.swift"
+      - "Brewy.xcodeproj/**"
+      - ".github/workflows/build.yml"
 
 defaults:
   run:
@@ -14,8 +18,8 @@ concurrency:
 permissions: {}
 
 jobs:
-  build:
-    name: Xcode
+  test-tsan:
+    name: Test (Thread Sanitizer)
     runs-on: macos-latest
     permissions:
       contents: read
@@ -24,15 +28,50 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build
+      - name: Test with Thread Sanitizer
         run: |
-          xcodebuild \
+          xcodebuild test \
             -project Brewy.xcodeproj \
             -scheme Brewy \
-            -destination 'generic/platform=macOS' \
-            -configuration Debug \
+            -destination 'platform=macOS' \
+            -enableCodeCoverage YES \
+            -enableThreadSanitizer YES \
+            -resultBundlePath TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
-            build
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          xcrun xccov view --report --only-targets TestResults.xcresult || true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+          retention-days: 14
+
+  test-asan:
+    name: Test (Address Sanitizer)
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Test with Address Sanitizer
+        run: |
+          xcodebuild test \
+            -project Brewy.xcodeproj \
+            -scheme Brewy \
+            -destination 'platform=macOS' \
+            -enableAddressSanitizer YES \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
