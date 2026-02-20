@@ -557,60 +557,8 @@ final class BrewService {
         )
     }
 
-    private func resolvedBrewPath() -> String {
-        let primary = customBrewPath
-        let fallback = "/usr/local/bin/brew"
-        if FileManager.default.isExecutableFile(atPath: primary) { return primary }
-        if FileManager.default.isExecutableFile(atPath: fallback) { return fallback }
-        return primary
-    }
-
     private func runBrewCommand(_ arguments: [String]) async -> CommandResult {
-        let brewPath = resolvedBrewPath()
-        let commandDescription = "brew \(arguments.joined(separator: " "))"
-        logger.info("Running: \(commandDescription)")
-        return await Task.detached(priority: .userInitiated) {
-            let process = Process()
-            let stdoutPipe = Pipe()
-            let stderrPipe = Pipe()
-
-            process.executableURL = URL(fileURLWithPath: brewPath)
-            process.arguments = arguments
-            process.standardOutput = stdoutPipe
-            process.standardError = stderrPipe
-
-            do {
-                try process.run()
-
-                async let stderrData = withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        let data = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                        continuation.resume(returning: data)
-                    }
-                }
-
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let resolvedStderr = await stderrData
-
-                process.waitUntilExit()
-
-                let output = String(data: stdoutData, encoding: .utf8) ?? ""
-                let errorOutput = String(data: resolvedStderr, encoding: .utf8) ?? ""
-                let combinedOutput = output.isEmpty ? errorOutput : output
-
-                return CommandResult(output: combinedOutput, success: process.terminationStatus == 0)
-            } catch {
-                logger.error("Failed to launch process: \(error.localizedDescription)")
-                return CommandResult(
-                    output: "Failed to run brew: \(error.localizedDescription)",
-                    success: false
-                )
-            }
-        }.value
+        let brewPath = CommandRunner.resolvedBrewPath(preferred: customBrewPath)
+        return await CommandRunner.run(arguments, brewPath: brewPath)
     }
-}
-
-private struct CommandResult: Sendable {
-    let output: String
-    let success: Bool
 }

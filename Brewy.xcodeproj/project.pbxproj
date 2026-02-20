@@ -21,6 +21,7 @@
 		CD0792452F47BAA300644F29 /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0792442F47BAA300644F29 /* WhatsNewView.swift */; };
 		CD94CDEA2F44419B00F87AD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = CD94CDE92F44419B00F87AD8 /* Sparkle */; };
 		CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC4C71C2F477969004EFE32 /* DiscoverView.swift */; };
+		CDED6EE32F47D370007C4421 /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDED6EE22F47D370007C4421 /* CommandRunner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		CD0792442F47BAA300644F29 /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		CD69630D2F479ED20033ABD8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CDC4C71C2F477969004EFE32 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		CDED6EE22F47D370007C4421 /* CommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,12 +67,12 @@
 		EE0002000000000000000002 /* Brewy */ = {
 			isa = PBXGroup;
 			children = (
-				CD69630D2F479ED20033ABD8 /* Info.plist */,
-				BB0001000000000000000001 /* BrewyApp.swift */,
-				EE0003000000000000000003 /* Models */,
-				EE0004000000000000000004 /* Views */,
 				BB0009000000000000000009 /* Assets.xcassets */,
 				BB000A00000000000000000A /* Brewy.entitlements */,
+				BB0001000000000000000001 /* BrewyApp.swift */,
+				CD69630D2F479ED20033ABD8 /* Info.plist */,
+				EE0003000000000000000003 /* Models */,
+				EE0004000000000000000004 /* Views */,
 			);
 			path = Brewy;
 			sourceTree = "<group>";
@@ -79,6 +81,7 @@
 			isa = PBXGroup;
 			children = (
 				BB0003000000000000000003 /* BrewService.swift */,
+				CDED6EE22F47D370007C4421 /* CommandRunner.swift */,
 				BB0002000000000000000002 /* PackageModel.swift */,
 			);
 			path = Models;
@@ -181,6 +184,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001000000000000000001 /* BrewyApp.swift in Sources */,
+				CDED6EE32F47D370007C4421 /* CommandRunner.swift in Sources */,
 				AA0002000000000000000002 /* PackageModel.swift in Sources */,
 				CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */,
 				AA0003000000000000000003 /* BrewService.swift in Sources */,
