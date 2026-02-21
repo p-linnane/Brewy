@@ -48,6 +48,7 @@ final class BrewService {
     var actionOutput: String = ""
     var lastError: BrewError?
     var lastUpdated: Date?
+    var tapHealthStatuses: [String: TapHealthStatus] = [:]
 
     private var tapsLoaded = false
     private var infoCache: [String: String] = [:]
@@ -155,6 +156,19 @@ final class BrewService {
         }
     }
 
+    // MARK: - Tap Health
+
+    func loadTapHealthCache() {
+        tapHealthStatuses = TapHealthChecker.loadCache()
+    }
+
+    func checkTapHealth() async {
+        tapHealthStatuses = await TapHealthChecker.checkHealth(
+            taps: installedTaps,
+            existing: tapHealthStatuses
+        )
+    }
+
     // MARK: - Homebrew CLI Interactions
 
     func refresh() async {
@@ -188,6 +202,7 @@ final class BrewService {
 
         logger.info("Refresh complete: \(fetchedFormulae.count) formulae, \(fetchedCasks.count) casks, \(fetchedOutdated.count) outdated")
         saveToCache()
+        Task { await checkTapHealth() }
     }
 
     func ensureTapsLoaded() async {

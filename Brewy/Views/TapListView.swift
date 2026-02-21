@@ -15,7 +15,7 @@ struct TapListView: View {
                 )
             } else {
                 ForEach(brewService.installedTaps) { tap in
-                    TapRow(tap: tap)
+                    TapRow(tap: tap, healthStatus: brewService.tapHealthStatuses[tap.name])
                         .tag(tap)
                         .contextMenu {
                             Button("Remove Tap", role: .destructive) {
@@ -51,6 +51,13 @@ struct TapListView: View {
 
 private struct TapRow: View {
     let tap: BrewTap
+    var healthStatus: TapHealthStatus?
+
+    private static let officialTaps: Set<String> = ["homebrew/core", "homebrew/cask"]
+
+    private var isOfficialTap: Bool {
+        Self.officialTaps.contains(tap.name)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -63,13 +70,10 @@ private struct TapRow: View {
                     Text(tap.name)
                         .font(.body)
                         .bold()
-                    if tap.isOfficial {
-                        Text("official")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.teal)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(.teal.opacity(0.12), in: .capsule)
+                    if let healthStatus, healthStatus.status != .healthy, healthStatus.status != .unknown {
+                        TapHealthBadge(status: healthStatus.status)
+                    } else if isOfficialTap, healthStatus?.status == .healthy {
+                        TapBadge(text: "official", color: .teal)
                     }
                 }
                 if !tap.remote.isEmpty {
@@ -86,6 +90,62 @@ private struct TapRow: View {
                 .monospacedDigit()
         }
         .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Tap Badges
+
+private struct TapBadge: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(color)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.12), in: .capsule)
+    }
+}
+
+private struct TapHealthBadge: View {
+    let status: TapHealthStatus.Status
+
+    private var label: String {
+        switch status {
+        case .archived: "archived"
+        case .moved: "moved"
+        case .notFound: "not found"
+        case .healthy, .unknown: ""
+        }
+    }
+
+    private var color: Color {
+        switch status {
+        case .archived: .yellow
+        case .moved: .orange
+        case .notFound: .red
+        case .healthy, .unknown: .secondary
+        }
+    }
+
+    private var icon: String {
+        switch status {
+        case .archived: "archivebox.fill"
+        case .moved: "arrow.right.arrow.left"
+        case .notFound: "exclamationmark.triangle.fill"
+        case .healthy, .unknown: "checkmark"
+        }
+    }
+
+    var body: some View {
+        Label(label, systemImage: icon)
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(color)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.12), in: .capsule)
     }
 }
 
@@ -156,8 +216,16 @@ struct TapDetailView: View {
         return brewService.installedCasks.filter { tokens.contains($0.name) }
     }
 
+    private var healthStatus: TapHealthStatus? {
+        brewService.tapHealthStatuses[tap.name]
+    }
+
     var body: some View {
         Form {
+            if let healthStatus, healthStatus.status != .healthy, healthStatus.status != .unknown {
+                TapHealthWarningSection(tap: tap, healthStatus: healthStatus)
+            }
+
             Section("Tap Info") {
                 LabeledContent("Name", value: tap.name)
                 if !tap.remote.isEmpty {
@@ -195,5 +263,70 @@ struct TapDetailView: View {
         }
         .formStyle(.grouped)
         .navigationTitle(tap.name)
+    }
+}
+
+// MARK: - Tap Health Warning
+
+private struct TapHealthWarningSection: View {
+    @Environment(BrewService.self) private var brewService
+    let tap: BrewTap
+    let healthStatus: TapHealthStatus
+
+    private var warningMessage: String {
+        switch healthStatus.status {
+        case .archived:
+            return "This tap's repository has been archived and will no longer receive updates. Consider removing it."
+        case .moved:
+            if let movedTo = healthStatus.movedTo {
+                return "This tap's repository has moved to \(movedTo). Consider removing and re-adding it."
+            }
+            return "This tap's repository has moved. Consider removing and re-adding it."
+        case .notFound:
+            return "This tap's repository could not be found on GitHub. It may have been deleted."
+        case .healthy, .unknown:
+            return ""
+        }
+    }
+
+    private var warningColor: Color {
+        switch healthStatus.status {
+        case .archived: .yellow
+        case .moved: .orange
+        case .notFound: .red
+        case .healthy, .unknown: .secondary
+        }
+    }
+
+    private var warningIcon: String {
+        switch healthStatus.status {
+        case .archived: "archivebox.fill"
+        case .moved: "arrow.right.arrow.left"
+        case .notFound: "exclamationmark.triangle.fill"
+        case .healthy, .unknown: "checkmark"
+        }
+    }
+
+    var body: some View {
+        Section {
+            Label {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(warningMessage)
+                        .font(.callout)
+                    if let movedTo = healthStatus.movedTo,
+                       let url = URL(string: movedTo) {
+                        Link("View new repository", destination: url)
+                            .font(.callout)
+                    }
+                }
+            } icon: {
+                Image(systemName: warningIcon)
+                    .foregroundStyle(warningColor)
+            }
+
+            Button("Remove Tap", role: .destructive) {
+                Task { await brewService.removeTap(name: tap.name) }
+            }
+        }
     }
 }

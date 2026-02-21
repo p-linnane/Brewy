@@ -41,6 +41,41 @@ struct BrewTap: Identifiable, Hashable, Codable {
     var id: String { name }
 }
 
+// MARK: - Tap Health Status
+
+struct TapHealthStatus: Codable, Equatable {
+    enum Status: String, Codable {
+        case healthy
+        case archived
+        case moved
+        case notFound
+        case unknown
+    }
+
+    let status: Status
+    let movedTo: String?
+    let lastChecked: Date
+
+    static let cacheTTL: TimeInterval = 24 * 60 * 60 // 1 day
+
+    var isStale: Bool {
+        Date().timeIntervalSince(lastChecked) > Self.cacheTTL
+    }
+
+    static func parseGitHubRepo(from remote: String) -> (owner: String, repo: String)? {
+        guard let url = URL(string: remote),
+              url.host == "github.com" || url.host == "www.github.com" else {
+            return nil
+        }
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        guard pathComponents.count >= 2 else { return nil }
+        let repo = pathComponents[1].hasSuffix(".git")
+            ? String(pathComponents[1].dropLast(4))
+            : pathComponents[1]
+        return (owner: pathComponents[0], repo: repo)
+    }
+}
+
 enum SidebarCategory: String, CaseIterable, Identifiable {
     case installed = "Installed"
     case formulae = "Formulae"
