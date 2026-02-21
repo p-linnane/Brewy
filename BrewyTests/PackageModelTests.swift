@@ -232,6 +232,102 @@ struct BrewJSONParsingTests {
     }
 }
 
+// MARK: - TapHealthStatus Tests
+
+@Suite("TapHealthStatus")
+struct TapHealthStatusTests {
+
+    @Test("Codable round-trip preserves all fields")
+    func codableRoundTrip() throws {
+        let original = TapHealthStatus(status: .archived, movedTo: nil, lastChecked: Date(timeIntervalSince1970: 1_700_000_000))
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(TapHealthStatus.self, from: data)
+        #expect(decoded.status == .archived)
+        #expect(decoded.movedTo == nil)
+        #expect(decoded.lastChecked == original.lastChecked)
+    }
+
+    @Test("Codable round-trip with movedTo URL")
+    func codableRoundTripWithMovedTo() throws {
+        let original = TapHealthStatus(
+            status: .moved,
+            movedTo: "https://api.github.com/repos/new-owner/new-repo",
+            lastChecked: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(TapHealthStatus.self, from: data)
+        #expect(decoded.status == .moved)
+        #expect(decoded.movedTo == "https://api.github.com/repos/new-owner/new-repo")
+    }
+
+    @Test("isStale returns false for recent entries")
+    func freshEntryNotStale() {
+        let status = TapHealthStatus(status: .healthy, movedTo: nil, lastChecked: Date())
+        #expect(!status.isStale)
+    }
+
+    @Test("isStale returns true for old entries")
+    func oldEntryIsStale() {
+        let twoDaysAgo = Date().addingTimeInterval(-2 * 24 * 60 * 60)
+        let status = TapHealthStatus(status: .healthy, movedTo: nil, lastChecked: twoDaysAgo)
+        #expect(status.isStale)
+    }
+
+    @Test("All status cases encode to expected raw values")
+    func statusRawValues() {
+        #expect(TapHealthStatus.Status.healthy.rawValue == "healthy")
+        #expect(TapHealthStatus.Status.archived.rawValue == "archived")
+        #expect(TapHealthStatus.Status.moved.rawValue == "moved")
+        #expect(TapHealthStatus.Status.notFound.rawValue == "notFound")
+        #expect(TapHealthStatus.Status.unknown.rawValue == "unknown")
+    }
+}
+
+// MARK: - parseGitHubRepo Tests
+
+@Suite("parseGitHubRepo")
+struct ParseGitHubRepoTests {
+
+    @Test("Parses standard GitHub HTTPS URL")
+    func standardGitHubURL() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew/homebrew-core")
+        #expect(result?.owner == "Homebrew")
+        #expect(result?.repo == "homebrew-core")
+    }
+
+    @Test("Strips .git suffix from URL")
+    func gitSuffixStripped() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew/homebrew-core.git")
+        #expect(result?.owner == "Homebrew")
+        #expect(result?.repo == "homebrew-core")
+    }
+
+    @Test("Returns nil for non-GitHub URLs")
+    func nonGitHubURL() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "https://gitlab.com/user/repo")
+        #expect(result == nil)
+    }
+
+    @Test("Returns nil for empty string")
+    func emptyString() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "")
+        #expect(result == nil)
+    }
+
+    @Test("Returns nil for GitHub URL with insufficient path components")
+    func insufficientPath() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew")
+        #expect(result == nil)
+    }
+
+    @Test("Handles www.github.com")
+    func wwwGitHubURL() {
+        let result = TapHealthStatus.parseGitHubRepo(from: "https://www.github.com/user/repo")
+        #expect(result?.owner == "user")
+        #expect(result?.repo == "repo")
+    }
+}
+
 // MARK: - BrewConfig Tests
 
 @Suite("BrewConfig Parsing")

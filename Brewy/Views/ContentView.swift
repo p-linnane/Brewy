@@ -82,6 +82,7 @@ struct ContentView: View {
                 selectedCategory = .casks
             }
             brewService.loadFromCache()
+            brewService.loadTapHealthCache()
             await brewService.refresh()
         }
         .task(id: autoRefreshInterval) {

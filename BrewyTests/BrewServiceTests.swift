@@ -170,6 +170,43 @@ struct BrewServiceDerivedStateTests {
     }
 }
 
+// MARK: - Tap Health Status Tests
+
+@Suite("BrewService Tap Health")
+@MainActor
+struct BrewServiceTapHealthTests {
+
+    @Test("tapHealthStatuses is keyed by tap name")
+    func healthStatusKeyedByName() {
+        let service = BrewService()
+        let status = TapHealthStatus(status: .archived, movedTo: nil, lastChecked: Date())
+        service.tapHealthStatuses["homebrew/test-bot"] = status
+
+        #expect(service.tapHealthStatuses["homebrew/test-bot"]?.status == .archived)
+        #expect(service.tapHealthStatuses["nonexistent"] == nil)
+    }
+
+    @Test("Multiple tap health statuses coexist")
+    func multipleStatuses() {
+        let service = BrewService()
+        service.tapHealthStatuses["tap/archived"] = TapHealthStatus(
+            status: .archived, movedTo: nil, lastChecked: Date()
+        )
+        service.tapHealthStatuses["tap/moved"] = TapHealthStatus(
+            status: .moved, movedTo: "https://github.com/new/repo", lastChecked: Date()
+        )
+        service.tapHealthStatuses["tap/healthy"] = TapHealthStatus(
+            status: .healthy, movedTo: nil, lastChecked: Date()
+        )
+
+        #expect(service.tapHealthStatuses.count == 3)
+        #expect(service.tapHealthStatuses["tap/archived"]?.status == .archived)
+        #expect(service.tapHealthStatuses["tap/moved"]?.status == .moved)
+        #expect(service.tapHealthStatuses["tap/moved"]?.movedTo == "https://github.com/new/repo")
+        #expect(service.tapHealthStatuses["tap/healthy"]?.status == .healthy)
+    }
+}
+
 // MARK: - mergeOutdatedStatus Tests
 
 @Suite("mergeOutdatedStatus")
