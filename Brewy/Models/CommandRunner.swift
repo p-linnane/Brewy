@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-private let logger = Logger(subsystem: "com.linnane.brewy", category: "CommandRunner")
+private let logger = Logger(subsystem: "io.linnane.brewy", category: "CommandRunner")
 
 // MARK: - Command Result
 

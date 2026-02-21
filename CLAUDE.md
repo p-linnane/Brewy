@@ -8,7 +8,7 @@ Brewy is a native macOS GUI for managing Homebrew packages, written in Swift/Swi
 - **Language:** Swift, SwiftUI (100%)
 - **Architecture:** MVVM using `@Observable` and SwiftUI Environment injection
 - **Only external dependency:** Sparkle (v2.8.1+) via Swift Package Manager for auto-updates
-- **Bundle ID:** `com.linnane.brewy`
+- **Bundle ID:** `io.linnane.brewy`
 - **License:** GPL-3.0-only
 
 ## Repository structure
@@ -165,7 +165,7 @@ PRs are squash-merged with the PR number appended, e.g. `feat: add test suite wi
 - `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` in CI
 - `@MainActor` isolation on BrewService
 - Structured concurrency: `async let` for parallel fetches, `Task.detached` for JSON parsing
-- Logging via `OSLog` (`Logger(subsystem: "com.linnane.brewy", category: ...)`)
+- Logging via `OSLog` (`Logger(subsystem: "io.linnane.brewy", category: ...)`)
 - MARK comments for code organization
 - Errors are `LocalizedError` with descriptive messages
 
