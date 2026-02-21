@@ -2,11 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Version tag"
-        required: true
-        type: string
 
 defaults:
   run:
@@ -20,14 +15,14 @@ permissions: {}
 
 env:
   DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
-  TAG: ${{ inputs.tag }}
 
 jobs:
   build:
     name: Build
     runs-on: macos-latest
     outputs:
-      artifact_name: "Brewy-${{ inputs.tag }}.zip"
+      tag: ${{ steps.version.outputs.tag }}
+      artifact_name: "Brewy-${{ steps.version.outputs.tag }}.zip"
       build_number: ${{ steps.build_number.outputs.build_number }}
     permissions:
       contents: write # required to create tag
@@ -40,6 +35,17 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
+      - name: Extract version from Xcode project
+        id: version
+        run: |
+          TAG=$(grep -m1 'MARKETING_VERSION' Brewy.xcodeproj/project.pbxproj | sed 's/.*= *//;s/ *;.*//')
+          if [[ -z "${TAG}" ]]; then
+            echo "::error::Could not extract MARKETING_VERSION from project.pbxproj"
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "TAG=${TAG}" >> "${GITHUB_ENV}"
 
       - name: Create tag
         env:
@@ -134,13 +140,13 @@ jobs:
       - name: Generate build provenance
         uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
         with:
-          subject-path: "${{ runner.temp }}/Brewy-${{ inputs.tag }}.zip"
+          subject-path: "${{ runner.temp }}/Brewy-${{ steps.version.outputs.tag }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: "Brewy-${{ inputs.tag }}.zip"
-          path: "${{ runner.temp }}/Brewy-${{ inputs.tag }}.zip"
+          name: "Brewy-${{ steps.version.outputs.tag }}.zip"
+          path: "${{ runner.temp }}/Brewy-${{ steps.version.outputs.tag }}.zip"
 
   upload:
     name: Upload
@@ -148,6 +154,8 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write # required to create GitHub releases
+    env:
+      TAG: ${{ needs.build.outputs.tag }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
