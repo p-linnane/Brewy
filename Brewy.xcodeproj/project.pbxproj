@@ -7,56 +7,37 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA0001000000000000000001 /* BrewyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* BrewyApp.swift */; };
-		AA0002000000000000000002 /* PackageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002000000000000000002 /* PackageModel.swift */; };
-		AA0003000000000000000003 /* BrewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003000000000000000003 /* BrewService.swift */; };
-		AA0004000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0004000000000000000004 /* ContentView.swift */; };
-		AA0005000000000000000005 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0005000000000000000005 /* SidebarView.swift */; };
-		AA0006000000000000000006 /* PackageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0006000000000000000006 /* PackageListView.swift */; };
-		AA0007000000000000000007 /* PackageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0007000000000000000007 /* PackageDetailView.swift */; };
-		AA0008000000000000000008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0008000000000000000008 /* SettingsView.swift */; };
-		AA0009000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0009000000000000000009 /* Assets.xcassets */; };
-		AA000B00000000000000000B /* TapListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000B00000000000000000B /* TapListView.swift */; };
-		AA000C00000000000000000C /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000C00000000000000000C /* MaintenanceView.swift */; };
-		CD0792452F47BAA300644F29 /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0792442F47BAA300644F29 /* WhatsNewView.swift */; };
 		CD94CDEA2F44419B00F87AD8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = CD94CDE92F44419B00F87AD8 /* Sparkle */; };
-		CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC4C71C2F477969004EFE32 /* DiscoverView.swift */; };
-		CDED6EE32F47D370007C4421 /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDED6EE22F47D370007C4421 /* CommandRunner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		CD91B5BE2F47CD1200961211 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = FF0002000000000000000002 /* Project object */;
+			containerPortal = CD56D56D2F49847B00AD7A08 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = FF0001000000000000000001;
+			remoteGlobalIDString = CD56D5742F49847B00AD7A08;
 			remoteInfo = Brewy;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		BB0001000000000000000001 /* BrewyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewyApp.swift; sourceTree = "<group>"; };
-		BB0002000000000000000002 /* PackageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageModel.swift; sourceTree = "<group>"; };
-		BB0003000000000000000003 /* BrewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewService.swift; sourceTree = "<group>"; };
-		BB0004000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		BB0005000000000000000005 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
-		BB0006000000000000000006 /* PackageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageListView.swift; sourceTree = "<group>"; };
-		BB0007000000000000000007 /* PackageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageDetailView.swift; sourceTree = "<group>"; };
-		BB0008000000000000000008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		BB0009000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BB000A00000000000000000A /* Brewy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Brewy.entitlements; sourceTree = "<group>"; };
-		BB000B00000000000000000B /* TapListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapListView.swift; sourceTree = "<group>"; };
-		BB000C00000000000000000C /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceView.swift; sourceTree = "<group>"; };
-		CC0001000000000000000001 /* Brewy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brewy.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CD0792442F47BAA300644F29 /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
-		CD69630D2F479ED20033ABD8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CD56D5752F49847B00AD7A08 /* Brewy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brewy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BrewyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CDC4C71C2F477969004EFE32 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
-		CDED6EE22F47D370007C4421 /* CommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRunner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CDADCE102F4982D0006D15BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CD56D5742F49847B00AD7A08 /* Brewy */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CD91B5BB2F47CD1200961211 /* BrewyTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BrewyTests; sourceTree = "<group>"; };
+		CDADCE002F4982D0006D15BC /* Brewy */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CDADCE102F4982D0006D15BC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Brewy; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +48,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DD0002000000000000000002 /* Frameworks */ = {
+		CD56D5722F49847B00AD7A08 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -78,58 +59,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		EE0001000000000000000001 = {
+		CD56D56C2F49847B00AD7A08 = {
 			isa = PBXGroup;
 			children = (
-				EE0002000000000000000002 /* Brewy */,
+				CDADCE002F4982D0006D15BC /* Brewy */,
 				CD91B5BB2F47CD1200961211 /* BrewyTests */,
-				EE0005000000000000000005 /* Products */,
+				CD56D5762F49847B00AD7A08 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		EE0002000000000000000002 /* Brewy */ = {
+		CD56D5762F49847B00AD7A08 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BB0009000000000000000009 /* Assets.xcassets */,
-				BB000A00000000000000000A /* Brewy.entitlements */,
-				BB0001000000000000000001 /* BrewyApp.swift */,
-				CD69630D2F479ED20033ABD8 /* Info.plist */,
-				EE0003000000000000000003 /* Models */,
-				EE0004000000000000000004 /* Views */,
-			);
-			path = Brewy;
-			sourceTree = "<group>";
-		};
-		EE0003000000000000000003 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				BB0003000000000000000003 /* BrewService.swift */,
-				CDED6EE22F47D370007C4421 /* CommandRunner.swift */,
-				BB0002000000000000000002 /* PackageModel.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		EE0004000000000000000004 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				BB0004000000000000000004 /* ContentView.swift */,
-				CDC4C71C2F477969004EFE32 /* DiscoverView.swift */,
-				BB000C00000000000000000C /* MaintenanceView.swift */,
-				BB0007000000000000000007 /* PackageDetailView.swift */,
-				BB0006000000000000000006 /* PackageListView.swift */,
-				BB0008000000000000000008 /* SettingsView.swift */,
-				BB0005000000000000000005 /* SidebarView.swift */,
-				BB000B00000000000000000B /* TapListView.swift */,
-				CD0792442F47BAA300644F29 /* WhatsNewView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		EE0005000000000000000005 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				CC0001000000000000000001 /* Brewy.app */,
+				CD56D5752F49847B00AD7A08 /* Brewy.app */,
 				CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */,
 			);
 			name = Products;
@@ -161,27 +103,30 @@
 			productReference = CD91B5BA2F47CD1200961211 /* BrewyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		FF0001000000000000000001 /* Brewy */ = {
+		CD56D5742F49847B00AD7A08 /* Brewy */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 110002000000000000000002 /* Build configuration list for PBXNativeTarget "Brewy" */;
+			buildConfigurationList = CD56D5802F49847C00AD7A08 /* Build configuration list for PBXNativeTarget "Brewy" */;
 			buildPhases = (
-				DD0001000000000000000001 /* Sources */,
-				DD0002000000000000000002 /* Frameworks */,
-				DD0003000000000000000003 /* Resources */,
+				CD56D5712F49847B00AD7A08 /* Sources */,
+				CD56D5722F49847B00AD7A08 /* Frameworks */,
+				CD56D5732F49847B00AD7A08 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				CDADCE002F4982D0006D15BC /* Brewy */,
+			);
 			name = Brewy;
 			productName = Brewy;
-			productReference = CC0001000000000000000001 /* Brewy.app */;
+			productReference = CD56D5752F49847B00AD7A08 /* Brewy.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		FF0002000000000000000002 /* Project object */ = {
+		CD56D56D2F49847B00AD7A08 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -190,14 +135,14 @@
 				TargetAttributes = {
 					CD91B5B92F47CD1200961211 = {
 						CreatedOnToolsVersion = 26.2;
-						TestTargetID = FF0001000000000000000001;
+						TestTargetID = CD56D5742F49847B00AD7A08;
 					};
-					FF0001000000000000000001 = {
+					CD56D5742F49847B00AD7A08 = {
 						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
-			buildConfigurationList = 110001000000000000000001 /* Build configuration list for PBXProject "Brewy" */;
+			buildConfigurationList = CD56D5702F49847B00AD7A08 /* Build configuration list for PBXProject "Brewy" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -205,15 +150,15 @@
 				en,
 				Base,
 			);
-			mainGroup = EE0001000000000000000001;
+			mainGroup = CD56D56C2F49847B00AD7A08;
 			packageReferences = (
 				CD94CDE82F44419B00F87AD8 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
-			productRefGroup = EE0005000000000000000005 /* Products */;
+			productRefGroup = CD56D5762F49847B00AD7A08 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				FF0001000000000000000001 /* Brewy */,
+				CD56D5742F49847B00AD7A08 /* Brewy */,
 				CD91B5B92F47CD1200961211 /* BrewyTests */,
 			);
 		};
@@ -227,11 +172,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DD0003000000000000000003 /* Resources */ = {
+		CD56D5732F49847B00AD7A08 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA0009000000000000000009 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,23 +189,10 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DD0001000000000000000001 /* Sources */ = {
+		CD56D5712F49847B00AD7A08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA0001000000000000000001 /* BrewyApp.swift in Sources */,
-				CDED6EE32F47D370007C4421 /* CommandRunner.swift in Sources */,
-				AA0002000000000000000002 /* PackageModel.swift in Sources */,
-				CDC4C71D2F477969004EFE32 /* DiscoverView.swift in Sources */,
-				AA0003000000000000000003 /* BrewService.swift in Sources */,
-				AA0004000000000000000004 /* ContentView.swift in Sources */,
-				CD0792452F47BAA300644F29 /* WhatsNewView.swift in Sources */,
-				AA0005000000000000000005 /* SidebarView.swift in Sources */,
-				AA0006000000000000000006 /* PackageListView.swift in Sources */,
-				AA0007000000000000000007 /* PackageDetailView.swift in Sources */,
-				AA0008000000000000000008 /* SettingsView.swift in Sources */,
-				AA000B00000000000000000B /* TapListView.swift in Sources */,
-				AA000C00000000000000000C /* MaintenanceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,13 +201,13 @@
 /* Begin PBXTargetDependency section */
 		CD91B5BF2F47CD1200961211 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FF0001000000000000000001 /* Brewy */;
+			target = CD56D5742F49847B00AD7A08 /* Brewy */;
 			targetProxy = CD91B5BE2F47CD1200961211 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		220001000000000000000001 /* Debug */ = {
+		CD56D57E2F49847C00AD7A08 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -341,7 +272,7 @@
 			};
 			name = Debug;
 		};
-		220002000000000000000002 /* Release */ = {
+		CD56D57F2F49847C00AD7A08 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -398,7 +329,7 @@
 			};
 			name = Release;
 		};
-		220003000000000000000003 /* Debug */ = {
+		CD56D5812F49847C00AD7A08 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
@@ -443,7 +374,7 @@
 			};
 			name = Debug;
 		};
-		220004000000000000000004 /* Release */ = {
+		CD56D5822F49847C00AD7A08 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = arm64;
@@ -539,20 +470,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		110001000000000000000001 /* Build configuration list for PBXProject "Brewy" */ = {
+		CD56D5702F49847B00AD7A08 /* Build configuration list for PBXProject "Brewy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				220001000000000000000001 /* Debug */,
-				220002000000000000000002 /* Release */,
+				CD56D57E2F49847C00AD7A08 /* Debug */,
+				CD56D57F2F49847C00AD7A08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		110002000000000000000002 /* Build configuration list for PBXNativeTarget "Brewy" */ = {
+		CD56D5802F49847C00AD7A08 /* Build configuration list for PBXNativeTarget "Brewy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				220003000000000000000003 /* Debug */,
-				220004000000000000000004 /* Release */,
+				CD56D5812F49847C00AD7A08 /* Debug */,
+				CD56D5822F49847C00AD7A08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -587,5 +518,5 @@
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = FF0002000000000000000002 /* Project object */;
+	rootObject = CD56D56D2F49847B00AD7A08 /* Project object */;
 }
