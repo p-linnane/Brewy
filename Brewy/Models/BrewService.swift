@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - Logging
 
-private let logger = Logger(subsystem: "com.linnane.brewy", category: "BrewService")
+private let logger = Logger(subsystem: "io.linnane.brewy", category: "BrewService")
 
 // MARK: - Error Types
 

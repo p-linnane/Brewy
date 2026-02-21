@@ -3,7 +3,7 @@ import OSLog
 
 // MARK: - Logging
 
-private let logger = Logger(subsystem: "com.linnane.brewy", category: "TapHealthChecker")
+private let logger = Logger(subsystem: "io.linnane.brewy", category: "TapHealthChecker")
 
 // MARK: - No-Redirect URL Session Delegate
 
