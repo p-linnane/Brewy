@@ -121,12 +121,16 @@ struct AppcastRelease: Identifiable {
 
     var id: String { version ?? title }
 
-    var publishedDate: Date? {
-        guard let pubDate else { return nil }
+    private static let pubDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
-        return formatter.date(from: pubDate)
+        return formatter
+    }()
+
+    var publishedDate: Date? {
+        guard let pubDate else { return nil }
+        return Self.pubDateFormatter.date(from: pubDate)
     }
 }
 
