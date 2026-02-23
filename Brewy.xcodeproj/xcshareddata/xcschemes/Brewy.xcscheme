@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FF0001000000000000000001"
+               BlueprintIdentifier = "CD56D5742F49847B00AD7A08"
                BuildableName = "Brewy.app"
                BlueprintName = "Brewy"
                ReferencedContainer = "container:Brewy.xcodeproj">
@@ -32,7 +32,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FF0001000000000000000001"
+            BlueprintIdentifier = "CD56D5742F49847B00AD7A08"
             BuildableName = "Brewy.app"
             BlueprintName = "Brewy"
             ReferencedContainer = "container:Brewy.xcodeproj">
@@ -48,7 +48,7 @@
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FF0001000000000000000001"
+            BlueprintIdentifier = "CD56D5742F49847B00AD7A08"
             BuildableName = "Brewy.app"
             BlueprintName = "Brewy"
             ReferencedContainer = "container:Brewy.xcodeproj">
@@ -62,6 +62,17 @@
                BlueprintIdentifier = "CD91B5B92F47CD1200961211"
                BuildableName = "BrewyTests.xctest"
                BlueprintName = "BrewyTests"
+               ReferencedContainer = "container:Brewy.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CD5C118B2F4D38C10022A138"
+               BuildableName = "BrewyUITests.xctest"
+               BlueprintName = "BrewyUITests"
                ReferencedContainer = "container:Brewy.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -81,7 +92,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FF0001000000000000000001"
+            BlueprintIdentifier = "CD56D5742F49847B00AD7A08"
             BuildableName = "Brewy.app"
             BlueprintName = "Brewy"
             ReferencedContainer = "container:Brewy.xcodeproj">
@@ -98,7 +109,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FF0001000000000000000001"
+            BlueprintIdentifier = "CD56D5742F49847B00AD7A08"
             BuildableName = "Brewy.app"
             BlueprintName = "Brewy"
             ReferencedContainer = "container:Brewy.xcodeproj">
