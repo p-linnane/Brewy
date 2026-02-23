@@ -63,6 +63,10 @@ enum TapHealthChecker {
         var statuses = existing
         var updated = false
 
+        let delegate = NoRedirectDelegate()
+        let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
+        defer { session.invalidateAndCancel() }
+
         for tap in taps {
             if let cached = statuses[tap.name], !cached.isStale {
                 continue
@@ -70,7 +74,7 @@ enum TapHealthChecker {
             guard let (owner, repo) = TapHealthStatus.parseGitHubRepo(from: tap.remote) else {
                 continue
             }
-            statuses[tap.name] = await fetchRepoHealth(owner: owner, repo: repo)
+            statuses[tap.name] = await fetchRepoHealth(owner: owner, repo: repo, session: session)
             updated = true
         }
 
@@ -87,7 +91,7 @@ enum TapHealthChecker {
 
     // MARK: - Private Helpers
 
-    private static func fetchRepoHealth(owner: String, repo: String) async -> TapHealthStatus {
+    private static func fetchRepoHealth(owner: String, repo: String, session: URLSession) async -> TapHealthStatus {
         let urlString = "https://api.github.com/repos/\(owner)/\(repo)"
         guard let url = URL(string: urlString) else {
             return TapHealthStatus(status: .unknown, movedTo: nil, lastChecked: Date())
@@ -96,10 +100,6 @@ enum TapHealthChecker {
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
         request.setValue("Brewy", forHTTPHeaderField: "User-Agent")
-
-        let delegate = NoRedirectDelegate()
-        let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
-        defer { session.invalidateAndCancel() }
 
         do {
             let (data, response) = try await session.data(for: request)
