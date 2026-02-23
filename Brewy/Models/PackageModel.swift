@@ -74,6 +74,13 @@ struct TapHealthStatus: Codable, Equatable {
             : pathComponents[1]
         return (owner: pathComponents[0], repo: repo)
     }
+
+    static func tapName(from githubUrl: String) -> String? {
+        guard let (owner, repo) = parseGitHubRepo(from: githubUrl) else { return nil }
+        let tapRepo = repo.hasPrefix("homebrew-") ? String(repo.dropFirst("homebrew-".count)) : repo
+        guard !tapRepo.isEmpty else { return nil }
+        return "\(owner)/\(tapRepo)"
+    }
 }
 
 enum SidebarCategory: String, CaseIterable, Identifiable {

@@ -106,7 +106,7 @@ enum TapHealthChecker {
             guard let httpResponse = response as? HTTPURLResponse else {
                 return TapHealthStatus(status: .unknown, movedTo: nil, lastChecked: Date())
             }
-            return mapResponse(statusCode: httpResponse.statusCode, data: data, response: httpResponse, owner: owner, repo: repo)
+            return await mapResponse(statusCode: httpResponse.statusCode, data: data, response: httpResponse, owner: owner, repo: repo)
         } catch {
             logger.warning("Failed to check health for \(owner)/\(repo): \(error.localizedDescription)")
             return TapHealthStatus(status: .unknown, movedTo: nil, lastChecked: Date())
@@ -119,12 +119,12 @@ enum TapHealthChecker {
         response: HTTPURLResponse,
         owner: String,
         repo: String
-    ) -> TapHealthStatus {
+    ) async -> TapHealthStatus {
         switch statusCode {
         case 200:
             return parseRepoResponse(data: data)
         case 301:
-            let movedTo = parseRedirectLocation(data: data, response: response)
+            let movedTo = await resolveRedirectLocation(data: data, response: response)
             return TapHealthStatus(status: .moved, movedTo: movedTo, lastChecked: Date())
         case 404:
             return TapHealthStatus(status: .notFound, movedTo: nil, lastChecked: Date())
@@ -149,11 +149,58 @@ enum TapHealthChecker {
         }
     }
 
-    private static func parseRedirectLocation(data: Data, response: HTTPURLResponse) -> String? {
-        if let location = response.value(forHTTPHeaderField: "Location") {
-            return location
+    private static func resolveRedirectLocation(data: Data, response: HTTPURLResponse) async -> String? {
+        let apiUrl = parseRedirectApiUrl(data: data, response: response)
+
+        // If redirect points to api.github.com, resolve the html_url
+        if let apiUrl, apiUrl.host == "api.github.com" {
+            if let htmlUrl = await fetchHtmlUrl(from: apiUrl) {
+                return htmlUrl
+            }
+        }
+
+        // Fall back to the raw redirect URL
+        if let apiUrl {
+            return apiUrl.absoluteString
+        }
+        return nil
+    }
+
+    private static func parseRedirectApiUrl(data: Data, response: HTTPURLResponse) -> URL? {
+        if let location = response.value(forHTTPHeaderField: "Location"),
+           let url = URL(string: location) {
+            return url
         }
         struct GitHubRedirect: Decodable { let url: String? }
-        return try? JSONDecoder().decode(GitHubRedirect.self, from: data).url
+        if let urlString = try? JSONDecoder().decode(GitHubRedirect.self, from: data).url {
+            return URL(string: urlString)
+        }
+        return nil
+    }
+
+    private static func fetchHtmlUrl(from apiUrl: URL) async -> String? {
+        var request = URLRequest(url: apiUrl)
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.setValue("Brewy", forHTTPHeaderField: "User-Agent")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                logger.warning("Failed to resolve API URL \(apiUrl): unexpected status")
+                return nil
+            }
+            struct GitHubRepo: Decodable {
+                let htmlUrl: String
+
+                enum CodingKeys: String, CodingKey {
+                    case htmlUrl = "html_url"
+                }
+            }
+            let repo = try JSONDecoder().decode(GitHubRepo.self, from: data)
+            return repo.htmlUrl
+        } catch {
+            logger.warning("Failed to resolve API URL \(apiUrl): \(error.localizedDescription)")
+            return nil
+        }
     }
 }

@@ -155,6 +155,7 @@ private struct AddTapSheet: View {
     @Environment(BrewService.self) private var brewService
     @Environment(\.dismiss) private var dismiss
     @State private var tapName = ""
+    @State private var isAdding = false
 
     private var isValidTapName: Bool {
         let trimmed = tapName.trimmingCharacters(in: .whitespaces)
@@ -168,31 +169,38 @@ private struct AddTapSheet: View {
         VStack(spacing: 16) {
             Text("Add Tap")
                 .font(.headline)
-            Text("Enter the tap name (e.g. homebrew/cask-fonts).")
+            Text("Enter the tap name (e.g. gromgit/fuse).")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             TextField("user/repo", text: $tapName)
                 .textFieldStyle(.roundedBorder)
+                .disabled(isAdding)
             if !tapName.isEmpty, !isValidTapName {
                 Text("Tap name must be in user/repo format.")
                     .font(.caption)
                     .foregroundStyle(.red)
+            }
+            if isAdding {
+                ProgressView("Adding \(tapName.trimmingCharacters(in: .whitespaces))…")
+                    .font(.callout)
             }
             HStack {
                 Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
+                .disabled(isAdding)
                 Button("Add") {
                     let name = tapName.trimmingCharacters(in: .whitespaces)
                     guard isValidTapName else { return }
+                    isAdding = true
                     Task {
                         await brewService.addTap(name: name)
                         dismiss()
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(!isValidTapName)
+                .disabled(!isValidTapName || isAdding)
             }
         }
         .padding(20)
@@ -272,16 +280,25 @@ private struct TapHealthWarningSection: View {
     @Environment(BrewService.self) private var brewService
     let tap: BrewTap
     let healthStatus: TapHealthStatus
+    @State private var showMigrateConfirmation = false
+
+    private var movedToTapName: String? {
+        guard let movedTo = healthStatus.movedTo else { return nil }
+        return TapHealthStatus.tapName(from: movedTo)
+    }
 
     private var warningMessage: String {
         switch healthStatus.status {
         case .archived:
             return "This tap's repository has been archived and will no longer receive updates. Consider removing it."
         case .moved:
-            if let movedTo = healthStatus.movedTo {
-                return "This tap's repository has moved to \(movedTo). Consider removing and re-adding it."
+            if let tapName = movedToTapName {
+                return "This tap's repository has moved to \(tapName)."
             }
-            return "This tap's repository has moved. Consider removing and re-adding it."
+            if let movedTo = healthStatus.movedTo {
+                return "This tap's repository has moved to \(movedTo)."
+            }
+            return "This tap's repository has moved."
         case .notFound:
             return "This tap's repository could not be found on GitHub. It may have been deleted."
         case .healthy, .unknown:
@@ -322,6 +339,23 @@ private struct TapHealthWarningSection: View {
             } icon: {
                 Image(systemName: warningIcon)
                     .foregroundStyle(warningColor)
+            }
+
+            if healthStatus.status == .moved, let newTapName = movedToTapName {
+                Button {
+                    showMigrateConfirmation = true
+                } label: {
+                    Label("Migrate to \(newTapName)", systemImage: "arrow.right")
+                }
+                .buttonStyle(.borderedProminent)
+                .alert("Migrate Tap", isPresented: $showMigrateConfirmation) {
+                    Button("Migrate", role: .destructive) {
+                        Task { await brewService.migrateTap(from: tap.name, to: newTapName) }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This will remove \(tap.name) and re-add it as \(newTapName). Any local changes to this tap will be lost.")
+                }
             }
 
             Button("Remove Tap", role: .destructive) {
