@@ -25,7 +25,9 @@ private final class LockedData: Sendable {
 
     func combined() -> Data {
         lock.lock()
-        let result = chunks.reduce(Data(), +)
+        var result = Data()
+        result.reserveCapacity(chunks.reduce(0) { $0 + $1.count })
+        for chunk in chunks { result.append(chunk) }
         lock.unlock()
         return result
     }
