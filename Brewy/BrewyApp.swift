@@ -82,6 +82,7 @@ struct BrewyApp: App {
 
 // MARK: - Sparkle Updates
 
+@MainActor
 private final class CheckForUpdatesViewModel: ObservableObject {
     @Published var canCheckForUpdates = false
 
