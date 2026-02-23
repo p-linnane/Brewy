@@ -251,13 +251,13 @@ struct TapHealthStatusTests {
     func codableRoundTripWithMovedTo() throws {
         let original = TapHealthStatus(
             status: .moved,
-            movedTo: "https://api.github.com/repos/new-owner/new-repo",
+            movedTo: "https://github.com/new-owner/homebrew-new-repo",
             lastChecked: Date(timeIntervalSince1970: 1_700_000_000)
         )
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(TapHealthStatus.self, from: data)
         #expect(decoded.status == .moved)
-        #expect(decoded.movedTo == "https://api.github.com/repos/new-owner/new-repo")
+        #expect(decoded.movedTo == "https://github.com/new-owner/homebrew-new-repo")
     }
 
     @Test("isStale returns false for recent entries")
@@ -325,6 +325,54 @@ struct ParseGitHubRepoTests {
         let result = TapHealthStatus.parseGitHubRepo(from: "https://www.github.com/user/repo")
         #expect(result?.owner == "user")
         #expect(result?.repo == "repo")
+    }
+}
+
+// MARK: - tapName Tests
+
+@Suite("tapName")
+struct TapNameTests {
+
+    @Test("Derives tap name from standard homebrew- prefixed URL")
+    func standardHomebrewPrefix() {
+        let result = TapHealthStatus.tapName(from: "https://github.com/DomT4/homebrew-autoupdate")
+        #expect(result == "DomT4/autoupdate")
+    }
+
+    @Test("Derives tap name from URL without homebrew- prefix")
+    func noHomebrewPrefix() {
+        let result = TapHealthStatus.tapName(from: "https://github.com/user/my-tap")
+        #expect(result == "user/my-tap")
+    }
+
+    @Test("Returns nil for non-GitHub URL")
+    func nonGitHub() {
+        let result = TapHealthStatus.tapName(from: "https://gitlab.com/user/homebrew-tap")
+        #expect(result == nil)
+    }
+
+    @Test("Returns nil for empty string")
+    func emptyString() {
+        let result = TapHealthStatus.tapName(from: "")
+        #expect(result == nil)
+    }
+
+    @Test("Handles www.github.com")
+    func wwwGitHub() {
+        let result = TapHealthStatus.tapName(from: "https://www.github.com/owner/homebrew-fonts")
+        #expect(result == "owner/fonts")
+    }
+
+    @Test("Strips .git suffix before deriving tap name")
+    func gitSuffix() {
+        let result = TapHealthStatus.tapName(from: "https://github.com/user/homebrew-tools.git")
+        #expect(result == "user/tools")
+    }
+
+    @Test("Returns nil when repo is exactly 'homebrew-' with nothing after")
+    func emptyAfterPrefix() {
+        let result = TapHealthStatus.tapName(from: "https://github.com/user/homebrew-")
+        #expect(result == nil)
     }
 }
 

@@ -290,35 +290,41 @@ final class BrewService {
     }
 
     func addTap(name: String) async {
+        await performTapAction { await runTapCommand(["tap", name]) }
+    }
+
+    func removeTap(name: String) async {
+        await performTapAction { await runTapCommand(["untap", name]) }
+    }
+
+    func migrateTap(from oldName: String, to newName: String) async {
+        await performTapAction {
+            logger.info("Migrating tap \(oldName) → \(newName)")
+            guard await runTapCommand(["untap", oldName]) else { return false }
+            tapHealthStatuses.removeValue(forKey: oldName)
+            return await runTapCommand(["tap", newName])
+        }
+    }
+
+    private func performTapAction(_ action: () async -> Bool) async {
         isPerformingAction = true
         actionOutput = ""
         lastError = nil
         defer { isPerformingAction = false }
-
-        let result = await runBrewCommand(["tap", name])
-        actionOutput = result.output
-        if !result.success {
-            lastError = .commandFailed(command: "tap", output: result.output)
-        }
+        _ = await action()
         tapsLoaded = false
         await ensureTapsLoaded()
         await refresh()
     }
 
-    func removeTap(name: String) async {
-        isPerformingAction = true
-        actionOutput = ""
-        lastError = nil
-        defer { isPerformingAction = false }
-
-        let result = await runBrewCommand(["untap", name])
-        actionOutput = result.output
+    @discardableResult
+    private func runTapCommand(_ arguments: [String]) async -> Bool {
+        let result = await runBrewCommand(arguments)
+        actionOutput += actionOutput.isEmpty ? result.output : "\n" + result.output
         if !result.success {
-            lastError = .commandFailed(command: "untap", output: result.output)
+            lastError = .commandFailed(command: arguments.first ?? "", output: result.output)
         }
-        tapsLoaded = false
-        await ensureTapsLoaded()
-        await refresh()
+        return result.success
     }
 
     func upgradeSelected(packages: [BrewPackage]) async {
