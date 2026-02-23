@@ -3,29 +3,16 @@
     <channel>
         <title>Brewy</title>
         <item>
-            <title>0.5.3</title>
-            <pubDate>Sat, 21 Feb 2026 07:59:17 +0000</pubDate>
-            <sparkle:version>8</sparkle:version>
-            <sparkle:shortVersionString>0.5.3</sparkle:shortVersionString>
+            <title>0.6.0</title>
+            <pubDate>Mon, 23 Feb 2026 22:39:09 +0000</pubDate>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <description><![CDATA[<h2>What&#x27;s New</h2>
 <ul>
-  <li>detect archived, moved, and missing tap repositories</li>
-</ul>
-<h2>Fixes</h2>
-<ul>
-  <li>save user&#x27;s color scheme and fallback to it instead of using `nil`</li>
-  <li>use correct bundle identifier in OSLog subsystem strings</li>
-</ul>
-<h2>Under the Hood</h2>
-<ul>
-  <li>migrate to sync groups and replace placeholder IDs</li>
-</ul>
-<h2>Documentation</h2>
-<ul>
-  <li>add CLAUDE.md with project context</li>
+  <li>resolve moved tap URLs and add migrate action</li>
 </ul>]]></description>
-            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.5.3/Brewy-0.5.3.zip" length="5301357" type="application/octet-stream" sparkle:edSignature="gJmO1f/9yRu8kfsr306+cBuod/Sua+LvEGSRD68piQxF3WOjBgQaANPht4z4i6LKYAiE9xiPs/c3kl5rU4JBBA=="/>
+            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.6.0/Brewy-0.6.0.zip" length="5387187" type="application/octet-stream" sparkle:edSignature="tyGMjSMg6j3OIfSbB9Rr+iXDFag6wpvlZ+GetXaTFf/VOnqGq7HzS1BsqxR99C4G5eeVBG3iSUiqrA0AbANBAA=="/>
         </item>
     </channel>
 </rss>
