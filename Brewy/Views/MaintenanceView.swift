@@ -75,7 +75,7 @@ struct MaintenanceView: View {
     private var orphansSection: some View {
         Section {
             HStack {
-                Label("Orphaned Packages", systemImage: "shippingbox.and.arrow.clockwise")
+                Label("Orphaned Packages", systemImage: "shippingbox.and.arrow.backward")
                     .font(.headline)
                 Spacer()
                 if brewService.isPerformingAction {
