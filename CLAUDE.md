@@ -7,7 +7,7 @@ Brewy is a native macOS GUI for managing Homebrew packages, written in Swift/Swi
 - **Platform:** macOS 15.0+ (Apple Silicon), built with Xcode 16+
 - **Language:** Swift, SwiftUI (100%)
 - **Architecture:** MVVM using `@Observable` and SwiftUI Environment injection
-- **Only external dependency:** Sparkle (v2.8.1+) via Swift Package Manager for auto-updates
+- **Only external dependency:** Sparkle via Swift Package Manager for auto-updates
 - **Bundle ID:** `io.linnane.brewy`
 - **License:** GPL-3.0-only
 
@@ -22,7 +22,8 @@ Brewy/
 │   ├── Models/
 │   │   ├── BrewService.swift        # @Observable service: state, caching, all brew CLI interactions
 │   │   ├── PackageModel.swift       # Data models + Brew JSON v2 Codable types + appcast parser
-│   │   └── CommandRunner.swift      # Process execution with timeout, cancellation, thread-safe pipe reading
+│   │   ├── CommandRunner.swift      # Process execution with timeout, cancellation, thread-safe pipe reading
+│   │   └── TapHealthChecker.swift   # Async GitHub API tap health detection (archived, moved, missing)
 │   └── Views/
 │       ├── ContentView.swift        # NavigationSplitView (3-column), toolbar, state management
 │       ├── SidebarView.swift        # Category list (Installed, Formulae, Casks, Outdated, Pinned, Leaves, Taps, Discover, Maintenance)
@@ -60,7 +61,7 @@ Brewy/
 
 The central service object that holds all app state and orchestrates brew CLI calls. Injected into the view hierarchy via `.environment(brewService)`.
 
-**State properties:** `installedFormulae`, `installedCasks`, `outdatedPackages`, `installedTaps`, `searchResults`, `isLoading`, `isPerformingAction`, `actionOutput`, `lastError`, `lastUpdated`
+**State properties:** `installedFormulae`, `installedCasks`, `outdatedPackages`, `installedTaps`, `searchResults`, `isLoading`, `isPerformingAction`, `actionOutput`, `lastError`, `lastUpdated`, `tapHealthStatuses`
 
 **Derived state** (recomputed on `didSet` of formulae/casks): `allInstalled`, `installedNames`, `reverseDependencies`
 
@@ -73,10 +74,12 @@ The central service object that holds all app state and orchestrates brew CLI ca
 - `upgradeAll()`, `upgradeSelected(packages:)` — bulk upgrades (formulae and casks separately)
 - `doctor()`, `cleanup()`, `removeOrphans()`, `purgeCache()`, `cacheSize()` — maintenance
 - `addTap/removeTap(name:)` — tap management
+- `checkTapHealth()` — async GitHub API check for archived, moved, or missing taps (runs on refresh)
+- `migrateTap(from:to:)` — untap old → tap new for moved repositories
 - `config()` — parses `brew config` output
 - `info(for:)` — cached `brew info` output
 
-**Caching:** JSON serialization to `~/Library/Application Support/Brewy/packageCache.json`. Loaded on app start, saved after each refresh.
+**Caching:** JSON serialization to `~/Library/Application Support/Brewy/packageCache.json` (packages) and `tapHealthCache.json` (tap health statuses with 24-hour TTL). Both loaded on app start, saved after each refresh.
 
 ### CommandRunner
 
@@ -86,12 +89,21 @@ Static enum that executes `Process` (brew CLI) with:
 - DispatchWorkItem-based timeout termination
 - Brew path resolution: preferred path → `/usr/local/bin/brew` fallback
 
+### TapHealthChecker
+
+Async utility that checks the health of installed taps via the GitHub API:
+- Uses `URLSession` with a no-redirect delegate to detect HTTP 301 (moved) and 404 (deleted) responses
+- Detects archived repositories via the `archived` flag in GitHub API JSON
+- Resolves redirect URLs for moved repositories to capture the new `html_url`
+- Results cached as `TapHealthStatus` with a 24-hour TTL; only stale taps are re-checked
+
 ### Data models (PackageModel.swift)
 
 - `BrewPackage` — Identifiable, Hashable, Codable. ID-based equality. `displayVersion` shows `installed → latest` when outdated.
 - `BrewTap` — tap metadata (name, remote, official status, formula/cask counts)
 - `SidebarCategory` — 9-case enum with SF Symbol icons
 - `AppcastRelease` — parsed from Sparkle XML feed
+- `TapHealthStatus` — Codable model with `Status` enum (healthy, archived, moved, notFound, unknown), `movedTo` URL, `lastChecked` date, 24-hour staleness TTL; includes static helpers for parsing GitHub repo URLs and deriving tap names
 - `BrewConfig` — parsed from `brew config` key-value output
 - JSON response types: `BrewInfoResponse`, `FormulaJSON`, `CaskJSON`, `BrewOutdatedResponse`, `OutdatedFormulaJSON`, `OutdatedCaskJSON`, `TapJSON`
 
@@ -123,6 +135,8 @@ brew tap/untap NAME                          # Tap management
 - Reverse dependency computation for installed packages
 - Leaves detection (formulae with no reverse dependencies)
 - Configurable brew path, auto-refresh interval, theme (light/dark/system)
+- Tap health monitoring: detects archived, moved, and missing tap repositories via GitHub API
+- Tap migration: one-click migrate to a tap's new URL when it has moved
 - "What's New" view parsing Sparkle appcast XML
 - Sparkle auto-updates with EdDSA signing
 
@@ -130,7 +144,7 @@ brew tap/untap NAME                          # Tap management
 
 - Framework: Swift Testing (`@Suite`, `@Test` macros)
 - ~50+ test cases across two files
-- Tests cover: derived state, reverse deps, leaves, pinned filtering, category routing, outdated merge logic, all JSON parsing, model equality/hashing, config parsing, appcast XML parsing
+- Tests cover: derived state, reverse deps, leaves, pinned filtering, category routing, outdated merge logic, all JSON parsing, model equality/hashing, config parsing, appcast XML parsing, tap health status (codable, GitHub URL parsing, staleness)
 - CI runs both Thread Sanitizer and Address Sanitizer
 - Code coverage reported via `xccov`
 
@@ -163,6 +177,7 @@ PRs are squash-merged with the PR number appended, e.g. `feat: add test suite wi
 - Line length: warning at 150, error at 200
 - Function body length: warning at 60, error at 100
 - `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` in CI
+- `SWIFT_STRICT_CONCURRENCY=complete` (Swift 6 strict concurrency checking)
 - `@MainActor` isolation on BrewService
 - Structured concurrency: `async let` for parallel fetches, `Task.detached` for JSON parsing
 - Logging via `OSLog` (`Logger(subsystem: "io.linnane.brewy", category: ...)`)
