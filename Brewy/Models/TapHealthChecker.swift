@@ -89,6 +89,18 @@ enum TapHealthChecker {
         return statuses
     }
 
+    // MARK: - GitHub API Models
+
+    private struct GitHubRepo: Decodable {
+        let archived: Bool?
+        let htmlUrl: String?
+
+        enum CodingKeys: String, CodingKey {
+            case archived
+            case htmlUrl = "html_url"
+        }
+    }
+
     // MARK: - Private Helpers
 
     private static func fetchRepoHealth(owner: String, repo: String, session: URLSession) async -> TapHealthStatus {
@@ -137,9 +149,6 @@ enum TapHealthChecker {
     }
 
     private static func parseRepoResponse(data: Data) -> TapHealthStatus {
-        struct GitHubRepo: Decodable {
-            let archived: Bool?
-        }
         do {
             let repo = try JSONDecoder().decode(GitHubRepo.self, from: data)
             let status: TapHealthStatus.Status = (repo.archived == true) ? .archived : .healthy
@@ -188,13 +197,6 @@ enum TapHealthChecker {
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.warning("Failed to resolve API URL \(apiUrl): unexpected status")
                 return nil
-            }
-            struct GitHubRepo: Decodable {
-                let htmlUrl: String
-
-                enum CodingKeys: String, CodingKey {
-                    case htmlUrl = "html_url"
-                }
             }
             let repo = try JSONDecoder().decode(GitHubRepo.self, from: data)
             return repo.htmlUrl
