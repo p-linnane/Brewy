@@ -13,7 +13,7 @@ A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, se
 - View package details, dependencies, and reverse dependencies
 - Install, uninstall, upgrade, pin, and unpin packages
 - Upgrade all outdated packages at once, or select specific packages to upgrade
-- Manage taps (add/remove third-party repositories)
+- Manage taps (add/remove third-party repositories) with health monitoring for archived, moved, and missing taps
 - Run `brew doctor`, remove orphaned packages, and clear the download cache
 - Menu bar extra showing outdated package count
 - Configurable auto-refresh interval and brew path
