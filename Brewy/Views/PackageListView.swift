@@ -117,7 +117,8 @@ struct PackageListView: View {
                         PackageRow(
                             package: package,
                             showInstalledBadge: isSearchingAll,
-                            showUpgradeButton: isOutdatedCategory && !isSelectingForUpgrade
+                            showUpgradeButton: isOutdatedCategory && !isSelectingForUpgrade,
+                            onUpgrade: { pkg in await brewService.upgrade(package: pkg) }
                         )
                     }
                     .tag(package)
@@ -219,10 +220,10 @@ private struct PackageListToolbar: ToolbarContent {
 // MARK: - Package Row
 
 private struct PackageRow: View {
-    @Environment(BrewService.self) private var brewService
     let package: BrewPackage
     var showInstalledBadge = false
     var showUpgradeButton = false
+    var onUpgrade: ((BrewPackage) async -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -255,7 +256,7 @@ private struct PackageRow: View {
             versionLabel
             if showUpgradeButton, package.isOutdated {
                 Button {
-                    Task { await brewService.upgrade(package: package) }
+                    Task { await onUpgrade?(package) }
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title3)

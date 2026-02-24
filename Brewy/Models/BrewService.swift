@@ -66,6 +66,7 @@ final class BrewService {
     private(set) var installedNames: Set<String> = []
     private(set) var reverseDependencies: [String: [BrewPackage]] = [:]
     private(set) var leavesPackages: [BrewPackage] = []
+    private(set) var pinnedPackages: [BrewPackage] = []
 
     private func updateInstalledPackages(formulae: [BrewPackage], casks: [BrewPackage]) {
         isBatchingUpdates = true
@@ -89,10 +90,7 @@ final class BrewService {
         }
         reverseDependencies = reverse
         leavesPackages = installedFormulae.filter { reverse[$0.name] == nil || reverse[$0.name]!.isEmpty }
-    }
-
-    var pinnedPackages: [BrewPackage] {
-        allInstalled.filter(\.pinned)
+        pinnedPackages = all.filter(\.pinned)
     }
 
     func dependents(of name: String) -> [BrewPackage] {

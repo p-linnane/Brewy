@@ -12,8 +12,11 @@ struct DiscoverView: View {
                 emptyContent
             } else {
                 ForEach(brewService.searchResults) { package in
-                    DiscoverRow(package: package)
-                        .tag(package)
+                    DiscoverRow(
+                        package: package,
+                        onInstall: { pkg in await brewService.install(package: pkg) }
+                    )
+                    .tag(package)
                 }
             }
         }
@@ -62,8 +65,8 @@ struct DiscoverView: View {
 // MARK: - Discover Row
 
 private struct DiscoverRow: View {
-    @Environment(BrewService.self) private var brewService
     let package: BrewPackage
+    var onInstall: ((BrewPackage) async -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -107,7 +110,7 @@ private struct DiscoverRow: View {
                     .foregroundStyle(.secondary)
             } else {
                 Button {
-                    Task { await brewService.install(package: package) }
+                    Task { await onInstall?(package) }
                 } label: {
                     Label("Install", systemImage: "arrow.down.circle.fill")
                         .font(.caption)
