@@ -67,9 +67,8 @@ struct ContentView: View {
                 )
             } else if let selectedPackage {
                 let package = brewService.allInstalled.first(where: { $0.id == selectedPackage.id }) ?? selectedPackage
-                let isOutdated = brewService.outdatedPackages.contains { $0.id == selectedPackage.id }
                 PackageDetailView(package: package)
-                    .id(isOutdated)
+                    .id(package.id)
                     .navigationSplitViewColumnWidth(ideal: 450)
             } else {
                 EmptyStateView()

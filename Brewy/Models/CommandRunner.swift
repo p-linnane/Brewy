@@ -35,10 +35,8 @@ private final class LockedData: Sendable {
 
 // MARK: - Command Runner
 
-/// Executes Homebrew CLI commands with timeout, cancellation, and logging.
 enum CommandRunner {
 
-    /// Default timeout for brew commands (5 minutes).
     static let defaultTimeout: Duration = .seconds(300)
 
     static func resolvedBrewPath(preferred: String) -> String {
