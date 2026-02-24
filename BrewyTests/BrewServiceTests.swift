@@ -4,7 +4,6 @@ import Testing
 
 // MARK: - Test Helpers
 
-/// Creates a minimal BrewPackage for testing. Only specify the fields you care about.
 private func makePackage(
     name: String,
     isCask: Bool = false,
@@ -85,8 +84,6 @@ struct BrewServiceDerivedStateTests {
 
         let leaves = service.leavesPackages
         let leafNames = Set(leaves.map(\.name))
-        // curl and git have no dependents, so they're leaves
-        // openssl is depended on by curl, so it's not a leaf
         #expect(leafNames == Set(["curl", "git"]))
         #expect(!leafNames.contains("openssl"))
     }
@@ -100,7 +97,6 @@ struct BrewServiceDerivedStateTests {
         let leaves = service.leavesPackages
         #expect(leaves.count == 1)
         #expect(leaves[0].name == "wget")
-        // firefox is a cask and should not appear in leaves
     }
 
     @Test("Pinned packages filters correctly")
@@ -150,7 +146,6 @@ struct BrewServiceDerivedStateTests {
         #expect(service.allInstalled.count == 1)
         #expect(service.installedNames.contains("wget"))
 
-        // Simulate a refresh that adds a package
         service.installedFormulae = [
             makePackage(name: "wget"),
             makePackage(name: "curl")
@@ -228,7 +223,6 @@ struct MergeOutdatedStatusTests {
         let merged = BrewService.mergeOutdatedStatus(pkg, outdatedByID: outdatedByID)
         #expect(merged.isOutdated == true)
         #expect(merged.latestVersion == "21.5.0")
-        // Original fields preserved
         #expect(merged.name == "node")
         #expect(merged.installedVersion == "20.10.0")
     }
