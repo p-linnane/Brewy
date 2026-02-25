@@ -34,6 +34,40 @@ struct BrewPackageTests {
         #expect(pkg.displayVersion == "8.5.0")
     }
 
+    @Test("Display version shows plain version when outdated but latestVersion is nil")
+    func displayVersionOutdatedNoLatest() {
+        let pkg = BrewPackage(
+            id: "formula-wget", name: "wget", version: "1.21",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: true,
+            installedVersion: "1.21", latestVersion: nil,
+            isCask: false, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        #expect(pkg.displayVersion == "1.21")
+    }
+
+    @Test("Different IDs are not equal even with same name")
+    func inequalityByDifferentId() {
+        let formula = BrewPackage(
+            id: "formula-git", name: "git", version: "2.43",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "2.43", latestVersion: nil,
+            isCask: false, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        let cask = BrewPackage(
+            id: "cask-git", name: "git", version: "2.43",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "2.43", latestVersion: nil,
+            isCask: true, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        #expect(formula != cask)
+    }
+
     @Test("Equality is based on ID only")
     func equalityById() {
         let first = BrewPackage(
@@ -205,6 +239,97 @@ struct BrewJSONParsingTests {
         #expect(tap.formulaNames == ["wget", "curl"])
     }
 
+    @Test("OutdatedFormulaJSON returns nil when currentVersion is missing")
+    func outdatedFormulaMissingCurrentVersion() throws {
+        let json = """
+        {
+            "formulae": [
+                {
+                    "name": "node",
+                    "installed_versions": ["20.10.0"],
+                    "pinned": false
+                }
+            ],
+            "casks": []
+        }
+        """
+        let data = try #require(json.data(using: .utf8))
+        let response = try JSONDecoder().decode(BrewOutdatedResponse.self, from: data)
+        let formulae = try #require(response.formulae)
+        #expect(formulae[0].toPackage() == nil)
+    }
+
+    @Test("OutdatedCaskJSON returns nil when fields are missing")
+    func outdatedCaskMissingFields() throws {
+        let json = """
+        {
+            "formulae": [],
+            "casks": [
+                {
+                    "name": "slack"
+                }
+            ]
+        }
+        """
+        let data = try #require(json.data(using: .utf8))
+        let response = try JSONDecoder().decode(BrewOutdatedResponse.self, from: data)
+        let casks = try #require(response.casks)
+        #expect(casks[0].toPackage() == nil)
+    }
+
+    @Test("CaskJSON with nil version uses 'unknown'")
+    func caskNilVersion() throws {
+        let json = """
+        {
+            "formulae": [],
+            "casks": [
+                {
+                    "token": "sketch",
+                    "desc": "Design tool"
+                }
+            ]
+        }
+        """
+        let data = try #require(json.data(using: .utf8))
+        let response = try JSONDecoder().decode(BrewInfoResponse.self, from: data)
+        let casks = try #require(response.casks)
+        let pkg = casks[0].toPackage()
+        #expect(pkg.version == "unknown")
+        #expect(pkg.installedVersion == "unknown")
+    }
+
+    @Test("TapJSON without remote uses empty string")
+    func tapNoRemote() throws {
+        let json = """
+        [{ "name": "local/tap" }]
+        """
+        let data = try #require(json.data(using: .utf8))
+        let taps = try JSONDecoder().decode([TapJSON].self, from: data)
+        let tap = taps[0].toTap()
+        #expect(tap.remote.isEmpty)
+        #expect(tap.isOfficial == false)
+        #expect(tap.formulaNames.isEmpty)
+        #expect(tap.caskTokens.isEmpty)
+    }
+
+    @Test("TapJSON remote without .git suffix is preserved")
+    func tapRemoteNoGitSuffix() throws {
+        let json = """
+        [{
+            "name": "user/tap",
+            "remote": "https://github.com/user/homebrew-tap",
+            "official": false,
+            "formula_names": [],
+            "cask_tokens": ["app"]
+        }]
+        """
+        let data = try #require(json.data(using: .utf8))
+        let taps = try JSONDecoder().decode([TapJSON].self, from: data)
+        let tap = taps[0].toTap()
+        #expect(tap.remote == "https://github.com/user/homebrew-tap")
+        #expect(tap.caskTokens == ["app"])
+    }
+
     @Test("Handles missing optional fields gracefully")
     func missingOptionalFields() throws {
         let json = """
@@ -229,231 +354,5 @@ struct BrewJSONParsingTests {
         #expect(pkg.version == "unknown")
         #expect(pkg.dependencies.isEmpty)
         #expect(pkg.pinned == false)
-    }
-}
-
-// MARK: - TapHealthStatus Tests
-
-@Suite("TapHealthStatus")
-struct TapHealthStatusTests {
-
-    @Test("Codable round-trip preserves all fields")
-    func codableRoundTrip() throws {
-        let original = TapHealthStatus(status: .archived, movedTo: nil, lastChecked: Date(timeIntervalSince1970: 1_700_000_000))
-        let data = try JSONEncoder().encode(original)
-        let decoded = try JSONDecoder().decode(TapHealthStatus.self, from: data)
-        #expect(decoded.status == .archived)
-        #expect(decoded.movedTo == nil)
-        #expect(decoded.lastChecked == original.lastChecked)
-    }
-
-    @Test("Codable round-trip with movedTo URL")
-    func codableRoundTripWithMovedTo() throws {
-        let original = TapHealthStatus(
-            status: .moved,
-            movedTo: "https://github.com/new-owner/homebrew-new-repo",
-            lastChecked: Date(timeIntervalSince1970: 1_700_000_000)
-        )
-        let data = try JSONEncoder().encode(original)
-        let decoded = try JSONDecoder().decode(TapHealthStatus.self, from: data)
-        #expect(decoded.status == .moved)
-        #expect(decoded.movedTo == "https://github.com/new-owner/homebrew-new-repo")
-    }
-
-    @Test("isStale returns false for recent entries")
-    func freshEntryNotStale() {
-        let status = TapHealthStatus(status: .healthy, movedTo: nil, lastChecked: Date())
-        #expect(!status.isStale)
-    }
-
-    @Test("isStale returns true for old entries")
-    func oldEntryIsStale() {
-        let twoDaysAgo = Date().addingTimeInterval(-2 * 24 * 60 * 60)
-        let status = TapHealthStatus(status: .healthy, movedTo: nil, lastChecked: twoDaysAgo)
-        #expect(status.isStale)
-    }
-
-    @Test("All status cases encode to expected raw values")
-    func statusRawValues() {
-        #expect(TapHealthStatus.Status.healthy.rawValue == "healthy")
-        #expect(TapHealthStatus.Status.archived.rawValue == "archived")
-        #expect(TapHealthStatus.Status.moved.rawValue == "moved")
-        #expect(TapHealthStatus.Status.notFound.rawValue == "notFound")
-        #expect(TapHealthStatus.Status.unknown.rawValue == "unknown")
-    }
-}
-
-// MARK: - parseGitHubRepo Tests
-
-@Suite("parseGitHubRepo")
-struct ParseGitHubRepoTests {
-
-    @Test("Parses standard GitHub HTTPS URL")
-    func standardGitHubURL() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew/homebrew-core")
-        #expect(result?.owner == "Homebrew")
-        #expect(result?.repo == "homebrew-core")
-    }
-
-    @Test("Strips .git suffix from URL")
-    func gitSuffixStripped() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew/homebrew-core.git")
-        #expect(result?.owner == "Homebrew")
-        #expect(result?.repo == "homebrew-core")
-    }
-
-    @Test("Returns nil for non-GitHub URLs")
-    func nonGitHubURL() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "https://gitlab.com/user/repo")
-        #expect(result == nil)
-    }
-
-    @Test("Returns nil for empty string")
-    func emptyString() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "")
-        #expect(result == nil)
-    }
-
-    @Test("Returns nil for GitHub URL with insufficient path components")
-    func insufficientPath() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "https://github.com/Homebrew")
-        #expect(result == nil)
-    }
-
-    @Test("Handles www.github.com")
-    func wwwGitHubURL() {
-        let result = TapHealthStatus.parseGitHubRepo(from: "https://www.github.com/user/repo")
-        #expect(result?.owner == "user")
-        #expect(result?.repo == "repo")
-    }
-}
-
-// MARK: - tapName Tests
-
-@Suite("tapName")
-struct TapNameTests {
-
-    @Test("Derives tap name from standard homebrew- prefixed URL")
-    func standardHomebrewPrefix() {
-        let result = TapHealthStatus.tapName(from: "https://github.com/DomT4/homebrew-autoupdate")
-        #expect(result == "DomT4/autoupdate")
-    }
-
-    @Test("Derives tap name from URL without homebrew- prefix")
-    func noHomebrewPrefix() {
-        let result = TapHealthStatus.tapName(from: "https://github.com/user/my-tap")
-        #expect(result == "user/my-tap")
-    }
-
-    @Test("Returns nil for non-GitHub URL")
-    func nonGitHub() {
-        let result = TapHealthStatus.tapName(from: "https://gitlab.com/user/homebrew-tap")
-        #expect(result == nil)
-    }
-
-    @Test("Returns nil for empty string")
-    func emptyString() {
-        let result = TapHealthStatus.tapName(from: "")
-        #expect(result == nil)
-    }
-
-    @Test("Handles www.github.com")
-    func wwwGitHub() {
-        let result = TapHealthStatus.tapName(from: "https://www.github.com/owner/homebrew-fonts")
-        #expect(result == "owner/fonts")
-    }
-
-    @Test("Strips .git suffix before deriving tap name")
-    func gitSuffix() {
-        let result = TapHealthStatus.tapName(from: "https://github.com/user/homebrew-tools.git")
-        #expect(result == "user/tools")
-    }
-
-    @Test("Returns nil when repo is exactly 'homebrew-' with nothing after")
-    func emptyAfterPrefix() {
-        let result = TapHealthStatus.tapName(from: "https://github.com/user/homebrew-")
-        #expect(result == nil)
-    }
-}
-
-// MARK: - BrewConfig Tests
-
-@Suite("BrewConfig Parsing")
-struct BrewConfigTests {
-
-    @Test("Parses brew config output correctly")
-    func parseConfig() {
-        let output = """
-        HOMEBREW_VERSION: 4.2.5
-        ORIGIN: https://github.com/Homebrew/brew
-        HEAD: abc123
-        Last commit: 2 days ago
-        Core tap HEAD: def456
-        Core tap last commit: 3 days ago
-        Core cask tap HEAD: ghi789
-        Core cask tap last commit: 1 day ago
-        """
-        let config = BrewConfig.parse(from: output)
-        #expect(config.version == "4.2.5")
-        #expect(config.homebrewLastCommit == "2 days ago")
-        #expect(config.coreTapLastCommit == "3 days ago")
-        #expect(config.coreCaskTapLastCommit == "1 day ago")
-    }
-
-    @Test("Returns nil for missing config values")
-    func parseMissingConfig() {
-        let output = "HOMEBREW_VERSION: 4.2.5\n"
-        let config = BrewConfig.parse(from: output)
-        #expect(config.version == "4.2.5")
-        #expect(config.homebrewLastCommit == nil)
-        #expect(config.coreTapLastCommit == nil)
-    }
-}
-
-// MARK: - AppcastParser Tests
-
-@Suite("Appcast XML Parsing")
-struct AppcastParserTests {
-
-    @Test("Parses Sparkle appcast item")
-    func parseAppcastItem() throws {
-        let xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.net/xml-namespaces/sparkle">
-            <channel>
-                <item>
-                    <title>Version 0.3.0</title>
-                    <pubDate>Mon, 17 Feb 2026 12:00:00 +0000</pubDate>
-                    <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
-                    <description><![CDATA[<h2>New Features</h2><ul><li>Added tap management</li></ul>]]></description>
-                    <enclosure url="https://example.com/Brewy-0.3.0.tar.xz"
-                        sparkle:version="42"
-                        sparkle:shortVersionString="0.3.0"
-                        type="application/octet-stream" />
-                </item>
-            </channel>
-        </rss>
-        """
-        let data = try #require(xml.data(using: .utf8))
-        let parser = AppcastParser()
-        let release = try #require(parser.parse(data: data))
-
-        #expect(release.title == "Version 0.3.0")
-        #expect(release.version == "0.3.0")
-        #expect(release.descriptionHTML?.contains("tap management") == true)
-        #expect(release.pubDate == "Mon, 17 Feb 2026 12:00:00 +0000")
-        #expect(release.publishedDate != nil)
-    }
-
-    @Test("Returns nil for empty feed")
-    func parseEmptyFeed() throws {
-        let xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <rss version="2.0"><channel></channel></rss>
-        """
-        let data = try #require(xml.data(using: .utf8))
-        let parser = AppcastParser()
-        let release = parser.parse(data: data)
-        #expect(release == nil)
     }
 }
