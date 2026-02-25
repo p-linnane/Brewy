@@ -263,3 +263,87 @@ struct SidebarCategoryTests {
         }
     }
 }
+
+// MARK: - BrewError Tests
+
+@Suite("BrewError")
+struct BrewErrorTests {
+
+    @Test("brewNotFound includes path in description")
+    func brewNotFoundDescription() {
+        let error = BrewError.brewNotFound(path: "/opt/homebrew/bin/brew")
+        #expect(error.errorDescription?.contains("/opt/homebrew/bin/brew") == true)
+    }
+
+    @Test("commandFailed uses output as description")
+    func commandFailedDescription() {
+        let error = BrewError.commandFailed(command: "install wget", output: "Error: wget already installed")
+        #expect(error.errorDescription == "Error: wget already installed")
+    }
+
+    @Test("parseFailed includes command in description")
+    func parseFailedDescription() {
+        let error = BrewError.parseFailed(command: "info --json=v2")
+        #expect(error.errorDescription?.contains("info --json=v2") == true)
+    }
+
+    @Test("commandTimedOut includes command in description")
+    func commandTimedOutDescription() {
+        let error = BrewError.commandTimedOut(command: "install gcc")
+        #expect(error.errorDescription?.contains("install gcc") == true)
+    }
+}
+
+// MARK: - CommandRunner Tests
+
+@Suite("CommandRunner")
+struct CommandRunnerTests {
+
+    @Test("resolvedBrewPath returns preferred path when executable exists")
+    func preferredPathExists() {
+        let path = CommandRunner.resolvedBrewPath(preferred: "/bin/sh")
+        #expect(path == "/bin/sh")
+    }
+
+    @Test("resolvedBrewPath returns preferred path when neither exists")
+    func neitherExists() {
+        let path = CommandRunner.resolvedBrewPath(preferred: "/nonexistent/brew")
+        #expect(path == "/nonexistent/brew")
+    }
+}
+
+// MARK: - BrewService Batching Tests
+
+@Suite("BrewService Batching")
+@MainActor
+struct BrewServiceBatchingTests {
+
+    @Test("updateInstalledPackages fires invalidateDerivedState only once")
+    func batchingReducesDerivedStateComputation() {
+        let service = BrewService()
+        let formula = makePackage(name: "wget", dependencies: ["openssl"])
+        let dep = makePackage(name: "openssl")
+        let cask = makePackage(name: "firefox", isCask: true)
+
+        service.installedFormulae = [formula, dep]
+        service.installedCasks = [cask]
+
+        #expect(service.allInstalled.count == 3)
+        #expect(service.leavesPackages.map(\.name).contains("wget"))
+        #expect(!service.leavesPackages.map(\.name).contains("openssl"))
+    }
+
+    @Test("Pinned packages computed eagerly via invalidateDerivedState")
+    func pinnedComputedEagerly() {
+        let service = BrewService()
+        service.installedFormulae = [
+            makePackage(name: "node", pinned: true),
+            makePackage(name: "python")
+        ]
+        service.installedCasks = [
+            makePackage(name: "slack", isCask: true, pinned: true)
+        ]
+        #expect(service.pinnedPackages.count == 2)
+        #expect(Set(service.pinnedPackages.map(\.name)) == Set(["node", "slack"]))
+    }
+}
