@@ -113,14 +113,16 @@ final class BrewService {
 
     // MARK: - Cache
 
-    nonisolated private static let cacheDirectory: URL = {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    nonisolated private static let cacheDirectory: URL? = {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         let dir = appSupport.appendingPathComponent("Brewy", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
 
-    nonisolated private static let cacheURL = cacheDirectory.appendingPathComponent("packageCache.json")
+    nonisolated private static let cacheURL: URL? = cacheDirectory?.appendingPathComponent("packageCache.json")
 
     private struct CachedData: Codable {
         let formulae: [BrewPackage]
@@ -131,8 +133,9 @@ final class BrewService {
     }
 
     func loadFromCache() {
+        guard let cacheURL = Self.cacheURL else { return }
         do {
-            let data = try Data(contentsOf: Self.cacheURL)
+            let data = try Data(contentsOf: cacheURL)
             let cached = try JSONDecoder().decode(CachedData.self, from: data)
             updateInstalledPackages(formulae: cached.formulae, casks: cached.casks)
             outdatedPackages = cached.outdated
@@ -146,6 +149,7 @@ final class BrewService {
     }
 
     private func saveToCache() {
+        guard let cacheURL = Self.cacheURL else { return }
         let cached = CachedData(
             formulae: installedFormulae,
             casks: installedCasks,
@@ -156,7 +160,7 @@ final class BrewService {
         Task.detached(priority: .utility) {
             do {
                 let data = try JSONEncoder().encode(cached)
-                try data.write(to: Self.cacheURL, options: .atomic)
+                try data.write(to: cacheURL, options: .atomic)
                 logger.debug("Cache saved successfully")
             } catch {
                 logger.error("Failed to save cache: \(error.localizedDescription)")

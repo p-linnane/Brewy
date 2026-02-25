@@ -28,7 +28,6 @@ struct DiscoverView: View {
                 brewService.searchResults = []
                 return
             }
-            brewService.isLoading = true
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }

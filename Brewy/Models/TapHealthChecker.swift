@@ -23,16 +23,19 @@ private final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate, Sendab
 
 enum TapHealthChecker {
 
-    private static let cacheDirectory: URL = {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    private static let cacheDirectory: URL? = {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
         let dir = appSupport.appendingPathComponent("Brewy", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
 
-    private static let cacheURL = cacheDirectory.appendingPathComponent("tapHealthCache.json")
+    private static let cacheURL: URL? = cacheDirectory?.appendingPathComponent("tapHealthCache.json")
 
     static func loadCache() -> [String: TapHealthStatus] {
+        guard let cacheURL else { return [:] }
         do {
             let data = try Data(contentsOf: cacheURL)
             let statuses = try JSONDecoder().decode([String: TapHealthStatus].self, from: data)
@@ -45,6 +48,7 @@ enum TapHealthChecker {
     }
 
     static func saveCache(_ statuses: [String: TapHealthStatus]) {
+        guard let cacheURL else { return }
         Task.detached(priority: .utility) {
             do {
                 let data = try JSONEncoder().encode(statuses)

@@ -156,6 +156,7 @@ private struct AddTapSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tapName = ""
     @State private var isAdding = false
+    @State private var errorMessage: String?
 
     private var isValidTapName: Bool {
         let trimmed = tapName.trimmingCharacters(in: .whitespaces)
@@ -175,8 +176,14 @@ private struct AddTapSheet: View {
             TextField("user/repo", text: $tapName)
                 .textFieldStyle(.roundedBorder)
                 .disabled(isAdding)
+                .onChange(of: tapName) { errorMessage = nil }
             if !tapName.isEmpty, !isValidTapName {
                 Text("Tap name must be in user/repo format.")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+            if let errorMessage {
+                Text(errorMessage)
                     .font(.caption)
                     .foregroundStyle(.red)
             }
@@ -194,9 +201,15 @@ private struct AddTapSheet: View {
                     let name = tapName.trimmingCharacters(in: .whitespaces)
                     guard isValidTapName else { return }
                     isAdding = true
+                    errorMessage = nil
                     Task {
                         await brewService.addTap(name: name)
-                        dismiss()
+                        if let error = brewService.lastError {
+                            errorMessage = error.localizedDescription
+                            isAdding = false
+                        } else {
+                            dismiss()
+                        }
                     }
                 }
                 .keyboardShortcut(.defaultAction)
