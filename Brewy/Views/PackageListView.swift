@@ -239,6 +239,9 @@ private struct PackageRow: View {
                     if package.isCask {
                         CaskBadge()
                     }
+                    if package.isMas {
+                        MasBadge()
+                    }
                     if package.pinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
@@ -270,10 +273,26 @@ private struct PackageRow: View {
     }
 
     private var packageIcon: some View {
-        Image(systemName: package.isCask ? "macwindow" : "terminal")
+        Image(systemName: iconName)
             .font(.title3)
-            .foregroundStyle(package.isCask ? .purple : .green)
+            .foregroundStyle(iconColor)
             .frame(width: 24)
+    }
+
+    private var iconName: String {
+        switch package.source {
+        case .formula: "terminal"
+        case .cask: "macwindow"
+        case .mas: "app.badge.fill"
+        }
+    }
+
+    private var iconColor: Color {
+        switch package.source {
+        case .formula: .green
+        case .cask: .purple
+        case .mas: .pink
+        }
     }
 
     private var versionLabel: some View {
@@ -310,5 +329,16 @@ private struct CaskBadge: View {
             .padding(.horizontal, 5)
             .padding(.vertical, 1)
             .background(.purple.opacity(0.12), in: .capsule)
+    }
+}
+
+private struct MasBadge: View {
+    var body: some View {
+        Text("mas")
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(.pink)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.pink.opacity(0.12), in: .capsule)
     }
 }

@@ -1,5 +1,13 @@
 import Foundation
 
+// MARK: - Package Source
+
+enum PackageSource: String, Codable {
+    case formula
+    case cask
+    case mas
+}
+
 struct BrewPackage: Identifiable, Hashable, Codable {
     let id: String
     let name: String
@@ -10,10 +18,13 @@ struct BrewPackage: Identifiable, Hashable, Codable {
     let isOutdated: Bool
     let installedVersion: String?
     let latestVersion: String?
-    let isCask: Bool
+    let source: PackageSource
     let pinned: Bool
     let installedOnRequest: Bool
     let dependencies: [String]
+
+    var isCask: Bool { source == .cask }
+    var isMas: Bool { source == .mas }
 
     var displayVersion: String {
         if isOutdated, let latest = latestVersion {
@@ -87,6 +98,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case installed = "Installed"
     case formulae = "Formulae"
     case casks = "Casks"
+    case masApps = "Mac App Store"
     case outdated = "Outdated"
     case pinned = "Pinned"
     case leaves = "Leaves"
@@ -101,6 +113,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .installed: "shippingbox.fill"
         case .formulae: "terminal.fill"
         case .casks: "macwindow"
+        case .masApps: "app.badge.fill"
         case .outdated: "arrow.triangle.2.circlepath"
         case .pinned: "pin.fill"
         case .leaves: "leaf.fill"
@@ -266,7 +279,7 @@ struct FormulaJSON: Decodable {
             isOutdated: false,
             installedVersion: installedVersion,
             latestVersion: stable,
-            isCask: false,
+            source: .formula,
             pinned: pinned ?? false,
             installedOnRequest: installed?.first?.installedOnRequest ?? false,
             dependencies: dependencies ?? []
@@ -292,7 +305,7 @@ struct CaskJSON: Decodable {
             isOutdated: false,
             installedVersion: resolvedVersion,
             latestVersion: nil,
-            isCask: true,
+            source: .cask,
             pinned: false,
             installedOnRequest: true,
             dependencies: []
@@ -330,7 +343,7 @@ struct OutdatedFormulaJSON: Decodable {
             isOutdated: true,
             installedVersion: installedVersions?.first,
             latestVersion: currentVersion,
-            isCask: false,
+            source: .formula,
             pinned: pinned ?? false,
             installedOnRequest: true,
             dependencies: []
@@ -362,7 +375,7 @@ struct OutdatedCaskJSON: Decodable {
             isOutdated: true,
             installedVersion: installedVersions,
             latestVersion: currentVersion,
-            isCask: true,
+            source: .cask,
             pinned: false,
             installedOnRequest: true,
             dependencies: []

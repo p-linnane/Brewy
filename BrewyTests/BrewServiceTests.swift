@@ -6,6 +6,7 @@ import Testing
 
 private func makePackage(
     name: String,
+    source: PackageSource = .formula,
     isCask: Bool = false,
     pinned: Bool = false,
     isOutdated: Bool = false,
@@ -14,8 +15,15 @@ private func makePackage(
     installedOnRequest: Bool = true,
     dependencies: [String] = []
 ) -> BrewPackage {
-    BrewPackage(
-        id: "\(isCask ? "cask" : "formula")-\(name)",
+    let resolvedSource = isCask ? PackageSource.cask : source
+    let prefix: String
+    switch resolvedSource {
+    case .formula: prefix = "formula"
+    case .cask: prefix = "cask"
+    case .mas: prefix = "mas"
+    }
+    return BrewPackage(
+        id: "\(prefix)-\(name)",
         name: name,
         version: installedVersion ?? "1.0",
         description: "",
@@ -24,7 +32,7 @@ private func makePackage(
         isOutdated: isOutdated,
         installedVersion: installedVersion ?? "1.0",
         latestVersion: latestVersion,
-        isCask: isCask,
+        source: resolvedSource,
         pinned: pinned,
         installedOnRequest: installedOnRequest,
         dependencies: dependencies
@@ -215,7 +223,7 @@ struct MergeOutdatedStatusTests {
             description: "", homepage: "",
             isInstalled: true, isOutdated: true,
             installedVersion: "20.10.0", latestVersion: "21.5.0",
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         let outdatedByID = [outdated.id: outdated]
@@ -345,5 +353,115 @@ struct BrewServiceBatchingTests {
         ]
         #expect(service.pinnedPackages.count == 2)
         #expect(Set(service.pinnedPackages.map(\.name)) == Set(["node", "slack"]))
+    }
+}
+
+// MARK: - Mac App Store (mas) Tests
+
+@Suite("BrewService Mas Support")
+@MainActor
+struct BrewServiceMasTests {
+
+    @Test("Mas apps appear in allInstalled")
+    func masAppsInAllInstalled() {
+        let service = BrewService()
+        service.installedFormulae = [makePackage(name: "wget")]
+        service.installedCasks = [makePackage(name: "firefox", isCask: true)]
+        service.installedMasApps = [makePackage(name: "Xcode", source: .mas)]
+
+        #expect(service.allInstalled.count == 3)
+        #expect(service.installedNames.contains("Xcode"))
+    }
+
+    @Test("packages(for: .masApps) returns mas apps")
+    func packagesForMasCategory() {
+        let service = BrewService()
+        let masApp = makePackage(name: "Xcode", source: .mas)
+        service.installedMasApps = [masApp]
+
+        #expect(service.packages(for: .masApps).count == 1)
+        #expect(service.packages(for: .masApps)[0].name == "Xcode")
+    }
+
+    @Test("Mas apps are excluded from leaves calculation")
+    func masAppsExcludedFromLeaves() {
+        let service = BrewService()
+        service.installedFormulae = [makePackage(name: "wget")]
+        service.installedMasApps = [makePackage(name: "Xcode", source: .mas)]
+
+        let leaves = service.leavesPackages
+        #expect(leaves.count == 1)
+        #expect(leaves[0].name == "wget")
+    }
+}
+
+// MARK: - Mas Output Parsing Tests
+
+@Suite("Mas Output Parsing")
+struct MasOutputParsingTests {
+
+    @Test("parseMasList parses standard output")
+    func parseMasListStandard() {
+        let output = """
+        497799835 Xcode (15.4)
+        640199958 Developer (10.6.5)
+        899247664 TestFlight (3.5.2)
+        """
+        let packages = MasParser.parseList(output)
+        #expect(packages.count == 3)
+        #expect(packages[0].name == "Xcode")
+        #expect(packages[0].version == "15.4")
+        #expect(packages[0].id == "mas-497799835")
+        #expect(packages[0].isMas == true)
+        #expect(packages[0].isCask == false)
+        #expect(packages[1].name == "Developer")
+        #expect(packages[2].name == "TestFlight")
+    }
+
+    @Test("parseMasList handles empty output")
+    func parseMasListEmpty() {
+        let packages = MasParser.parseList("")
+        #expect(packages.isEmpty)
+    }
+
+    @Test("parseMasList skips malformed lines")
+    func parseMasListMalformed() {
+        let output = """
+        497799835 Xcode (15.4)
+        not-a-number Something (1.0)
+        899247664 TestFlight (3.5.2)
+        """
+        let packages = MasParser.parseList(output)
+        #expect(packages.count == 2)
+    }
+
+    @Test("parseMasOutdated parses standard output")
+    func parseMasOutdatedStandard() {
+        let output = """
+        497799835 Xcode (15.4 -> 16.0)
+        640199958 Developer (10.6.5 -> 10.6.6)
+        """
+        let packages = MasParser.parseOutdated(output)
+        #expect(packages.count == 2)
+        #expect(packages[0].name == "Xcode")
+        #expect(packages[0].isOutdated == true)
+        #expect(packages[0].installedVersion == "15.4")
+        #expect(packages[0].latestVersion == "16.0")
+        #expect(packages[0].isMas == true)
+        #expect(packages[1].installedVersion == "10.6.5")
+        #expect(packages[1].latestVersion == "10.6.6")
+    }
+
+    @Test("parseMasOutdated handles empty output")
+    func parseMasOutdatedEmpty() {
+        let packages = MasParser.parseOutdated("")
+        #expect(packages.isEmpty)
+    }
+
+    @Test("parseMasList generates App Store homepage URLs")
+    func parseMasListHomepage() {
+        let output = "497799835 Xcode (15.4)\n"
+        let packages = MasParser.parseList(output)
+        #expect(packages[0].homepage == "https://apps.apple.com/app/id497799835")
     }
 }

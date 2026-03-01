@@ -46,6 +46,13 @@ final class BrewService {
             invalidateDerivedState()
         }
     }
+    var installedMasApps: [BrewPackage] = [] {
+        didSet {
+            guard !isBatchingUpdates else { return }
+            invalidateDerivedState()
+        }
+    }
+    var isMasAvailable = false
     var outdatedPackages: [BrewPackage] = []
     var installedTaps: [BrewTap] = []
     var searchResults: [BrewPackage] = []
@@ -68,16 +75,17 @@ final class BrewService {
     private(set) var leavesPackages: [BrewPackage] = []
     private(set) var pinnedPackages: [BrewPackage] = []
 
-    private func updateInstalledPackages(formulae: [BrewPackage], casks: [BrewPackage]) {
+    private func updateInstalledPackages(formulae: [BrewPackage], casks: [BrewPackage], masApps: [BrewPackage] = []) {
         isBatchingUpdates = true
         installedFormulae = formulae
         installedCasks = casks
+        installedMasApps = masApps
         isBatchingUpdates = false
         invalidateDerivedState()
     }
 
     private func invalidateDerivedState() {
-        let all = installedFormulae + installedCasks
+        let all = installedFormulae + installedCasks + installedMasApps
         allInstalled = all
         installedNames = Set(all.map(\.name))
 
@@ -102,6 +110,7 @@ final class BrewService {
         case .installed: allInstalled
         case .formulae: installedFormulae
         case .casks: installedCasks
+        case .masApps: installedMasApps
         case .outdated: outdatedPackages
         case .pinned: pinnedPackages
         case .leaves: leavesPackages
@@ -127,6 +136,7 @@ final class BrewService {
     private struct CachedData: Codable {
         let formulae: [BrewPackage]
         let casks: [BrewPackage]
+        let masApps: [BrewPackage]?
         let outdated: [BrewPackage]
         let taps: [BrewTap]
         let lastUpdated: Date
@@ -137,10 +147,12 @@ final class BrewService {
         do {
             let data = try Data(contentsOf: cacheURL)
             let cached = try JSONDecoder().decode(CachedData.self, from: data)
-            updateInstalledPackages(formulae: cached.formulae, casks: cached.casks)
+            let masApps = cached.masApps ?? []
+            updateInstalledPackages(formulae: cached.formulae, casks: cached.casks, masApps: masApps)
             outdatedPackages = cached.outdated
             installedTaps = cached.taps
             tapsLoaded = !cached.taps.isEmpty
+            isMasAvailable = !masApps.isEmpty || FileManager.default.isExecutableFile(atPath: CommandRunner.resolvedMasPath())
             lastUpdated = cached.lastUpdated
             logger.info("Loaded \(cached.formulae.count) formulae and \(cached.casks.count) casks from cache")
         } catch {
@@ -153,6 +165,7 @@ final class BrewService {
         let cached = CachedData(
             formulae: installedFormulae,
             casks: installedCasks,
+            masApps: installedMasApps,
             outdated: outdatedPackages,
             taps: installedTaps,
             lastUpdated: lastUpdated ?? Date()
@@ -198,17 +211,23 @@ final class BrewService {
         async let formulae = fetchInstalledFormulae()
         async let casks = fetchInstalledCasks()
         async let outdated = fetchOutdatedPackages()
+        async let masApps = fetchInstalledMasApps()
+        async let masOutdated = fetchOutdatedMasApps()
 
         let fetchedFormulae = await formulae
         let fetchedCasks = await casks
         let fetchedOutdated = await outdated
-        let outdatedByID = Dictionary(uniqueKeysWithValues: fetchedOutdated.map { ($0.id, $0) })
+        let fetchedMasApps = await masApps
+        let fetchedMasOutdated = await masOutdated
+        let allOutdated = fetchedOutdated + fetchedMasOutdated
+        let outdatedByID = Dictionary(uniqueKeysWithValues: allOutdated.map { ($0.id, $0) })
 
         updateInstalledPackages(
             formulae: fetchedFormulae.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
-            casks: fetchedCasks.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) }
+            casks: fetchedCasks.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
+            masApps: fetchedMasApps.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) }
         )
-        outdatedPackages = fetchedOutdated
+        outdatedPackages = allOutdated
         lastUpdated = Date()
 
         let currentVersions = Dictionary(uniqueKeysWithValues: allInstalled.map { ($0.id, $0.version) })
@@ -219,7 +238,9 @@ final class BrewService {
         installedTaps = await fetchTaps()
         tapsLoaded = true
 
-        logger.info("Refresh complete: \(fetchedFormulae.count) formulae, \(fetchedCasks.count) casks, \(fetchedOutdated.count) outdated")
+        let masCount = fetchedMasApps.count
+        let outdatedCount = allOutdated.count
+        logger.info("Refresh complete: \(fetchedFormulae.count) formulae, \(fetchedCasks.count) casks, \(masCount) mas, \(outdatedCount) outdated")
         saveToCache()
         Task { await checkTapHealth() }
     }
@@ -322,8 +343,8 @@ final class BrewService {
         lastError = nil
         defer { isPerformingAction = false }
 
-        let formulae = packages.filter { !$0.isCask }.map(\.name)
-        let casks = packages.filter(\.isCask).map(\.name)
+        let formulae = packages.filter { $0.source == .formula }.map(\.name)
+        let casks = packages.filter { $0.source == .cask }.map(\.name)
 
         if !formulae.isEmpty {
             let result = await runBrewCommand(["upgrade"] + formulae)
@@ -387,6 +408,7 @@ final class BrewService {
     }
 
     func info(for package: BrewPackage) async -> String {
+        guard !package.isMas else { return "" }
         if let cached = infoCache[package.id] { return cached }
         let command = package.isCask ? ["info", "--cask", package.name] : ["info", package.name]
         let result = await runBrewCommand(command)
@@ -413,6 +435,10 @@ final class BrewService {
     }
 
     private func performAction(_ action: String, package: BrewPackage) async {
+        guard !package.isMas else {
+            logger.warning("Cannot perform brew action \(action) on mas package \(package.name)")
+            return
+        }
         logger.info("Performing \(action) on \(package.name)")
         isPerformingAction = true
         actionOutput = ""
@@ -516,11 +542,11 @@ final class BrewService {
         let knownNames = installedNames
         var packages: [BrewPackage] = []
 
-        for output in [(formulaeOutput, false), (casksOutput, true)] {
-            let (result, isCask) = output
+        for output in [(formulaeOutput, PackageSource.formula), (casksOutput, PackageSource.cask)] {
+            let (result, source) = output
             guard result.success else { continue }
 
-            let prefix = isCask ? "cask" : "formula"
+            let prefix = source == .cask ? "cask" : "formula"
             for line in result.output.split(separator: "\n") {
                 for token in line.split(whereSeparator: \.isWhitespace) where !token.hasPrefix("==>") {
                     let name = String(token)
@@ -534,7 +560,7 @@ final class BrewService {
                         isOutdated: false,
                         installedVersion: nil,
                         latestVersion: nil,
-                        isCask: isCask,
+                        source: source,
                         pinned: false,
                         installedOnRequest: false,
                         dependencies: []
@@ -557,7 +583,7 @@ final class BrewService {
             isInstalled: pkg.isInstalled, isOutdated: true,
             installedVersion: pkg.installedVersion,
             latestVersion: outdatedPkg.latestVersion,
-            isCask: pkg.isCask, pinned: pkg.pinned,
+            source: pkg.source, pinned: pkg.pinned,
             installedOnRequest: pkg.installedOnRequest,
             dependencies: pkg.dependencies
         )

@@ -20,15 +20,18 @@ struct PackageDetailView: View {
                 Divider()
                     .padding(.horizontal)
                 PackageInfoSection(package: package)
-                Divider()
-                    .padding(.horizontal)
-                BrewInfoSection(info: detailedInfo, isLoading: isLoadingInfo)
+                if !package.isMas {
+                    Divider()
+                        .padding(.horizontal)
+                    BrewInfoSection(info: detailedInfo, isLoading: isLoadingInfo)
+                }
             }
             .padding(.vertical)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.background)
         .task(id: package.id) {
+            guard !package.isMas else { return }
             detailedInfo = ""
             isLoadingInfo = true
             detailedInfo = await brewService.info(for: package)
@@ -58,15 +61,39 @@ struct PackageDetailView: View {
 private struct PackageHeader: View {
     let package: BrewPackage
 
+    private var headerIcon: String {
+        switch package.source {
+        case .formula: "terminal.fill"
+        case .cask: "macwindow"
+        case .mas: "app.badge.fill"
+        }
+    }
+
+    private var headerColor: Color {
+        switch package.source {
+        case .formula: .green
+        case .cask: .purple
+        case .mas: .pink
+        }
+    }
+
+    private var sourceBadgeText: String {
+        switch package.source {
+        case .formula: "Formula"
+        case .cask: "Cask"
+        case .mas: "Mac App Store"
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(package.isCask ? .purple.opacity(0.1) : .green.opacity(0.1))
+                    .fill(headerColor.opacity(0.1))
                     .frame(width: 56, height: 56)
-                Image(systemName: package.isCask ? "macwindow" : "terminal.fill")
+                Image(systemName: headerIcon)
                     .font(.title)
-                    .foregroundStyle(package.isCask ? .purple : .green)
+                    .foregroundStyle(headerColor)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -74,14 +101,12 @@ private struct PackageHeader: View {
                     Text(package.name)
                         .font(.title2)
                         .bold()
-                    if package.isCask {
-                        Text("Cask")
-                            .font(.caption)
-                            .foregroundStyle(.purple)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.purple.opacity(0.12), in: .capsule)
-                    }
+                    Text(sourceBadgeText)
+                        .font(.caption)
+                        .foregroundStyle(headerColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(headerColor.opacity(0.12), in: .capsule)
                     if package.pinned {
                         Label("Pinned", systemImage: "pin.fill")
                             .font(.caption)
@@ -118,7 +143,11 @@ private struct ActionBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if package.isInstalled {
+            if package.isMas {
+                Text("Managed via Mac App Store")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else if package.isInstalled {
                 if package.isOutdated {
                     Button("Upgrade", systemImage: "arrow.up.circle") {
                         Task { await brewService.upgrade(package: package) }
@@ -157,7 +186,7 @@ private struct ActionBar: View {
 
             if !package.homepage.isEmpty, let url = URL(string: package.homepage) {
                 Link(destination: url) {
-                    Label("Homepage", systemImage: "globe")
+                    Label(package.isMas ? "App Store" : "Homepage", systemImage: package.isMas ? "app.badge.fill" : "globe")
                 }
                 .buttonStyle(.bordered)
             }
@@ -173,6 +202,14 @@ private struct PackageInfoSection: View {
     @Environment(BrewService.self) private var brewService
     let package: BrewPackage
 
+    private var packageTypeName: String {
+        switch package.source {
+        case .formula: "Formula"
+        case .cask: "Cask"
+        case .mas: "Mac App Store"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Details")
@@ -182,7 +219,7 @@ private struct PackageInfoSection: View {
                 GridItem(.flexible(), alignment: .topLeading),
                 GridItem(.flexible(), alignment: .topLeading)
             ], spacing: 10) {
-                InfoField(label: "Type", value: package.isCask ? "Cask" : "Formula")
+                InfoField(label: "Type", value: packageTypeName)
                 InfoField(label: "Installed Version", value: package.installedVersion ?? "—")
 
                 if let latest = package.latestVersion {
