@@ -284,13 +284,12 @@ final class BrewService {
         await performBrewAction(["upgrade"], refreshAfter: true)
     }
 
-    func pin(package: BrewPackage) async {
-        await performAction("pin", package: package)
-    }
-
-    func unpin(package: BrewPackage) async {
-        await performAction("unpin", package: package)
-    }
+    func pin(package: BrewPackage) async { await performAction("pin", package: package) }
+    func unpin(package: BrewPackage) async { await performAction("unpin", package: package) }
+    func reinstall(package: BrewPackage) async { await performAction("reinstall", package: package) }
+    func fetch(package: BrewPackage) async { await performAction("fetch", package: package) }
+    func link(package: BrewPackage) async { await performAction("link", package: package) }
+    func unlink(package: BrewPackage) async { await performAction("unlink", package: package) }
 
     func updateHomebrew() async {
         await performBrewAction(["update"], refreshAfter: true)

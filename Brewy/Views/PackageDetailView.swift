@@ -155,31 +155,13 @@ private struct ActionBar: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.orange)
                 }
-
-                if !package.isCask {
-                    if package.pinned {
-                        Button("Unpin", systemImage: "pin.slash") {
-                            Task { await brewService.unpin(package: package) }
-                        }
-                        .buttonStyle(.bordered)
-                    } else {
-                        Button("Pin", systemImage: "pin") {
-                            Task { await brewService.pin(package: package) }
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
-
-                Button("Uninstall", systemImage: "trash") {
-                    showUninstallConfirm = true
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
+                installedActionsMenu
             } else {
                 Button("Install", systemImage: "arrow.down.circle") {
                     Task { await brewService.install(package: package) }
                 }
                 .buttonStyle(.borderedProminent)
+                notInstalledActionsMenu
             }
 
             Spacer()
@@ -193,6 +175,55 @@ private struct ActionBar: View {
         }
         .padding()
         .disabled(brewService.isPerformingAction)
+    }
+
+    private var installedActionsMenu: some View {
+        Menu {
+            if !package.isCask {
+                if package.pinned {
+                    Button("Unpin", systemImage: "pin.slash") {
+                        Task { await brewService.unpin(package: package) }
+                    }
+                } else {
+                    Button("Pin", systemImage: "pin") {
+                        Task { await brewService.pin(package: package) }
+                    }
+                }
+            }
+            Button("Reinstall", systemImage: "arrow.triangle.2.circlepath") {
+                Task { await brewService.reinstall(package: package) }
+            }
+            Button("Fetch", systemImage: "arrow.down.to.line") {
+                Task { await brewService.fetch(package: package) }
+            }
+            if !package.isCask {
+                Divider()
+                Button("Link", systemImage: "link") {
+                    Task { await brewService.link(package: package) }
+                }
+                Button("Unlink", systemImage: "minus.circle") {
+                    Task { await brewService.unlink(package: package) }
+                }
+            }
+            Divider()
+            Button("Uninstall", systemImage: "trash", role: .destructive) {
+                showUninstallConfirm = true
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .buttonStyle(.bordered)
+    }
+
+    private var notInstalledActionsMenu: some View {
+        Menu {
+            Button("Fetch", systemImage: "arrow.down.to.line") {
+                Task { await brewService.fetch(package: package) }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .buttonStyle(.bordered)
     }
 }
 
