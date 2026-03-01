@@ -62,6 +62,7 @@ final class BrewService {
     var lastError: BrewError?
     var lastUpdated: Date?
     var tapHealthStatuses: [String: TapHealthStatus] = [:]
+    var packageGroups: [PackageGroup] = []
 
     private var tapsLoaded = false
     @ObservationIgnored private var isBatchingUpdates = false
@@ -116,6 +117,7 @@ final class BrewService {
         case .leaves: leavesPackages
         case .taps: []
         case .services: []
+        case .groups: []
         case .discover: searchResults
         case .maintenance: []
         }
@@ -123,7 +125,7 @@ final class BrewService {
 
     // MARK: - Cache
 
-    nonisolated private static let cacheDirectory: URL? = {
+    nonisolated static let cacheDirectory: URL? = {
         guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             return nil
         }

@@ -421,4 +421,69 @@ struct PackageSourceTests {
         #expect(!category.systemImage.isEmpty)
         #expect(category.id == "Mac App Store")
     }
+
+    @Test("SidebarCategory.groups has correct properties")
+    func groupsCategoryProperties() {
+        let category = SidebarCategory.groups
+        #expect(category.rawValue == "Groups")
+        #expect(category.systemImage == "folder.fill")
+        #expect(category.id == "Groups")
+    }
+}
+
+// MARK: - PackageGroup Tests
+
+@Suite("PackageGroup Model")
+struct PackageGroupTests {
+
+    @Test("PackageGroup initializes with defaults")
+    func defaultInitialization() {
+        let group = PackageGroup(name: "My Group")
+        #expect(group.name == "My Group")
+        #expect(group.systemImage == "folder.fill")
+        #expect(group.packageIDs.isEmpty)
+    }
+
+    @Test("PackageGroup initializes with custom values")
+    func customInitialization() {
+        let group = PackageGroup(
+            name: "Dev Tools",
+            systemImage: "wrench.fill",
+            packageIDs: ["formula-git", "formula-curl"]
+        )
+        #expect(group.name == "Dev Tools")
+        #expect(group.systemImage == "wrench.fill")
+        #expect(group.packageIDs.count == 2)
+    }
+
+    @Test("PackageGroup equality is based on ID")
+    func equalityById() {
+        let id = UUID()
+        let group1 = PackageGroup(id: id, name: "Group A")
+        let group2 = PackageGroup(id: id, name: "Group B", systemImage: "star.fill")
+        #expect(group1 == group2)
+        #expect(group1.hashValue == group2.hashValue)
+    }
+
+    @Test("PackageGroups with different IDs are not equal")
+    func inequalityByDifferentId() {
+        let group1 = PackageGroup(name: "Group A")
+        let group2 = PackageGroup(name: "Group A")
+        #expect(group1 != group2)
+    }
+
+    @Test("PackageGroup encodes and decodes correctly")
+    func encodeDecode() throws {
+        let group = PackageGroup(
+            name: "Server Tools",
+            systemImage: "server.rack",
+            packageIDs: ["formula-nginx", "formula-redis"]
+        )
+        let data = try JSONEncoder().encode(group)
+        let decoded = try JSONDecoder().decode(PackageGroup.self, from: data)
+        #expect(decoded.id == group.id)
+        #expect(decoded.name == "Server Tools")
+        #expect(decoded.systemImage == "server.rack")
+        #expect(decoded.packageIDs == ["formula-nginx", "formula-redis"])
+    }
 }

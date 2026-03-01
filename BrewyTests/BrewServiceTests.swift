@@ -395,6 +395,123 @@ struct BrewServiceMasTests {
     }
 }
 
+// MARK: - Package Group Tests
+
+@Suite("BrewService Package Groups")
+@MainActor
+struct BrewServicePackageGroupTests {
+
+    @Test("createGroup adds a group")
+    func createGroupAddsGroup() {
+        let service = BrewService()
+        service.createGroup(name: "Dev Tools", systemImage: "wrench.fill")
+
+        #expect(service.packageGroups.count == 1)
+        #expect(service.packageGroups[0].name == "Dev Tools")
+        #expect(service.packageGroups[0].systemImage == "wrench.fill")
+    }
+
+    @Test("deleteGroup removes the group")
+    func deleteGroupRemovesGroup() {
+        let service = BrewService()
+        service.createGroup(name: "Group A")
+        service.createGroup(name: "Group B")
+        let groupA = service.packageGroups[0]
+
+        service.deleteGroup(groupA)
+
+        #expect(service.packageGroups.count == 1)
+        #expect(service.packageGroups[0].name == "Group B")
+    }
+
+    @Test("updateGroup modifies name and icon")
+    func updateGroupModifies() {
+        let service = BrewService()
+        service.createGroup(name: "Old Name")
+        let group = service.packageGroups[0]
+
+        service.updateGroup(group, name: "New Name", systemImage: "star.fill")
+
+        #expect(service.packageGroups[0].name == "New Name")
+        #expect(service.packageGroups[0].systemImage == "star.fill")
+    }
+
+    @Test("addToGroup adds package ID")
+    func addToGroupAddsPackageID() {
+        let service = BrewService()
+        service.createGroup(name: "Test")
+        let group = service.packageGroups[0]
+
+        service.addToGroup(group, packageID: "formula-wget")
+
+        #expect(service.packageGroups[0].packageIDs == ["formula-wget"])
+    }
+
+    @Test("addToGroup prevents duplicates")
+    func addToGroupPreventsDuplicates() {
+        let service = BrewService()
+        service.createGroup(name: "Test")
+        let group = service.packageGroups[0]
+
+        service.addToGroup(group, packageID: "formula-wget")
+        service.addToGroup(group, packageID: "formula-wget")
+
+        #expect(service.packageGroups[0].packageIDs.count == 1)
+    }
+
+    @Test("removeFromGroup removes package ID")
+    func removeFromGroupRemovesPackageID() {
+        let service = BrewService()
+        service.createGroup(name: "Test")
+        let group = service.packageGroups[0]
+        service.addToGroup(group, packageID: "formula-wget")
+        service.addToGroup(group, packageID: "formula-curl")
+
+        service.removeFromGroup(service.packageGroups[0], packageID: "formula-wget")
+
+        #expect(service.packageGroups[0].packageIDs == ["formula-curl"])
+    }
+
+    @Test("packages(in:) resolves package IDs to installed packages")
+    func packagesInGroupResolvesIDs() {
+        let service = BrewService()
+        service.installedFormulae = [
+            makePackage(name: "wget"),
+            makePackage(name: "curl"),
+            makePackage(name: "git")
+        ]
+        service.createGroup(name: "Test")
+        let group = service.packageGroups[0]
+        service.addToGroup(group, packageID: "formula-wget")
+        service.addToGroup(group, packageID: "formula-git")
+
+        let packages = service.packages(in: service.packageGroups[0])
+        #expect(packages.count == 2)
+        #expect(Set(packages.map(\.name)) == Set(["wget", "git"]))
+    }
+
+    @Test("packages(in:) ignores uninstalled package IDs")
+    func packagesInGroupIgnoresUninstalled() {
+        let service = BrewService()
+        service.installedFormulae = [makePackage(name: "wget")]
+        service.createGroup(name: "Test")
+        let group = service.packageGroups[0]
+        service.addToGroup(group, packageID: "formula-wget")
+        service.addToGroup(group, packageID: "formula-removed")
+
+        let packages = service.packages(in: service.packageGroups[0])
+        #expect(packages.count == 1)
+        #expect(packages[0].name == "wget")
+    }
+
+    @Test("packages(for: .groups) returns empty")
+    func packagesForGroupsCategoryReturnsEmpty() {
+        let service = BrewService()
+        service.createGroup(name: "Test")
+        #expect(service.packages(for: .groups).isEmpty)
+    }
+}
+
 // MARK: - Mas Output Parsing Tests
 
 @Suite("Mas Output Parsing")

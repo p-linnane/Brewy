@@ -21,7 +21,8 @@ final class SidebarNavigationUITests: XCTestCase {
     func testAllSidebarCategoriesRender() throws {
         let categories = [
             "Installed", "Formulae", "Casks", "Outdated",
-            "Pinned", "Leaves", "Taps", "Discover", "Maintenance"
+            "Pinned", "Leaves", "Taps", "Services", "Groups",
+            "Discover", "Maintenance"
         ]
 
         let sidebar = app.outlines.firstMatch
@@ -43,7 +44,8 @@ final class SidebarNavigationUITests: XCTestCase {
 
         let expectedCategories = [
             "Installed", "Formulae", "Casks", "Outdated",
-            "Pinned", "Leaves", "Taps", "Discover", "Maintenance"
+            "Pinned", "Leaves", "Taps", "Services", "Groups",
+            "Discover", "Maintenance"
         ]
 
         for category in expectedCategories {
