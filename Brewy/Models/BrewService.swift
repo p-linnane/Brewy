@@ -115,6 +115,7 @@ final class BrewService {
         case .pinned: pinnedPackages
         case .leaves: leavesPackages
         case .taps: []
+        case .services: []
         case .discover: searchResults
         case .maintenance: []
         }
