@@ -104,6 +104,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case leaves = "Leaves"
     case taps = "Taps"
     case services = "Services"
+    case groups = "Groups"
     case discover = "Discover"
     case maintenance = "Maintenance"
 
@@ -120,9 +121,34 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .leaves: "leaf.fill"
         case .taps: "spigot.fill"
         case .services: "gearshape.2"
+        case .groups: "folder.fill"
         case .discover: "magnifyingglass"
         case .maintenance: "wrench.and.screwdriver.fill"
         }
+    }
+}
+
+// MARK: - Package Group
+
+struct PackageGroup: Identifiable, Codable, Hashable {
+    let id: UUID
+    var name: String
+    var systemImage: String
+    var packageIDs: [String]
+
+    init(id: UUID = UUID(), name: String, systemImage: String = "folder.fill", packageIDs: [String] = []) {
+        self.id = id
+        self.name = name
+        self.systemImage = systemImage
+        self.packageIDs = packageIDs
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

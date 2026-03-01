@@ -205,6 +205,10 @@ private struct ActionBar: View {
                     Task { await brewService.unlink(package: package) }
                 }
             }
+            if !brewService.packageGroups.isEmpty {
+                Divider()
+                GroupMenuItems(package: package)
+            }
             Divider()
             Button("Uninstall", systemImage: "trash", role: .destructive) {
                 showUninstallConfirm = true
@@ -437,6 +441,31 @@ private struct BrewInfoSection: View {
             }
         }
         .padding()
+    }
+}
+
+// MARK: - Group Menu Items
+
+private struct GroupMenuItems: View {
+    @Environment(BrewService.self) private var brewService
+    let package: BrewPackage
+
+    var body: some View {
+        ForEach(brewService.packageGroups) { group in
+            let isMember = group.packageIDs.contains(package.id)
+            Button {
+                if isMember {
+                    brewService.removeFromGroup(group, packageID: package.id)
+                } else {
+                    brewService.addToGroup(group, packageID: package.id)
+                }
+            } label: {
+                Label(
+                    group.name,
+                    systemImage: isMember ? "checkmark.circle.fill" : "circle"
+                )
+            }
+        }
     }
 }
 

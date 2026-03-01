@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var selectedPackage: BrewPackage?
     @State private var selectedTap: BrewTap?
     @State private var selectedServiceItem: BrewServiceItem?
+    @State private var selectedGroupItem: PackageGroup?
     @State private var servicesRefreshTrigger = false
     @State private var searchText = ""
     @State private var showError = false
@@ -46,6 +47,9 @@ struct ContentView: View {
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .services {
                 ServicesView(selectedService: $selectedServiceItem, refreshTrigger: servicesRefreshTrigger)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
+            } else if selectedCategory == .groups {
+                GroupsView(selectedGroup: $selectedGroupItem)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .discover {
                 DiscoverView(selectedPackage: $selectedPackage)
@@ -77,6 +81,17 @@ struct ContentView: View {
                     title: "Select a Service",
                     subtitle: "Choose a service from the list to view its details and controls."
                 )
+            } else if selectedCategory == .groups, let group = selectedGroupItem,
+                      brewService.packageGroups.contains(where: { $0.id == group.id }) {
+                GroupDetailView(group: brewService.packageGroups.first { $0.id == group.id }!)
+                    .id(group.id)
+                    .navigationSplitViewColumnWidth(ideal: 450)
+            } else if selectedCategory == .groups {
+                EmptyStateView(
+                    icon: "folder",
+                    title: "Select a Group",
+                    subtitle: "Choose a group from the list to view its packages."
+                )
             } else if selectedCategory == .taps, let tap = selectedTap {
                 TapDetailView(tap: tap)
             } else if selectedCategory == .taps {
@@ -102,6 +117,7 @@ struct ContentView: View {
             }
             brewService.loadFromCache()
             brewService.loadTapHealthCache()
+            brewService.loadGroups()
             await brewService.refresh()
         }
         .task(id: autoRefreshInterval) {
