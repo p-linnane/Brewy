@@ -25,6 +25,8 @@ struct ContentView: View {
     @State private var selectedCategory: SidebarCategory? = .installed
     @State private var selectedPackage: BrewPackage?
     @State private var selectedTap: BrewTap?
+    @State private var selectedServiceItem: BrewServiceItem?
+    @State private var servicesRefreshTrigger = false
     @State private var searchText = ""
     @State private var showError = false
     @State private var showWhatsNew = false
@@ -41,6 +43,9 @@ struct ContentView: View {
                     .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
             } else if selectedCategory == .taps {
                 TapListView(selectedTap: $selectedTap)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
+            } else if selectedCategory == .services {
+                ServicesView(selectedService: $selectedServiceItem, refreshTrigger: servicesRefreshTrigger)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .discover {
                 DiscoverView(selectedPackage: $selectedPackage)
@@ -60,6 +65,18 @@ struct ContentView: View {
             if selectedCategory == .maintenance || (selectedCategory == .masApps && !brewService.isMasAvailable) {
                 Color.clear
                     .navigationSplitViewColumnWidth(0)
+            } else if selectedCategory == .services, let service = selectedServiceItem {
+                ServiceDetailView(service: service) {
+                    servicesRefreshTrigger.toggle()
+                }
+                .id(service.id)
+                .navigationSplitViewColumnWidth(ideal: 450)
+            } else if selectedCategory == .services {
+                EmptyStateView(
+                    icon: "gearshape.2",
+                    title: "Select a Service",
+                    subtitle: "Choose a service from the list to view its details and controls."
+                )
             } else if selectedCategory == .taps, let tap = selectedTap {
                 TapDetailView(tap: tap)
             } else if selectedCategory == .taps {

@@ -103,6 +103,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case pinned = "Pinned"
     case leaves = "Leaves"
     case taps = "Taps"
+    case services = "Services"
     case discover = "Discover"
     case maintenance = "Maintenance"
 
@@ -118,6 +119,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .pinned: "pin.fill"
         case .leaves: "leaf.fill"
         case .taps: "spigot.fill"
+        case .services: "gearshape.2"
         case .discover: "magnifyingglass"
         case .maintenance: "wrench.and.screwdriver.fill"
         }
@@ -208,6 +210,81 @@ final class AppcastParser: NSObject, XMLParserDelegate {
             insideItem = false
         }
         currentElement = ""
+    }
+}
+
+// MARK: - Brew Service Item
+
+struct BrewServiceItem: Identifiable, Hashable, Codable {
+    let name: String
+    let serviceName: String?
+    let running: Bool
+    let loaded: Bool
+    let pid: Int?
+    let exitCode: Int?
+    let user: String?
+    let status: String?
+    let file: String?
+    let logPath: String?
+    let errorLogPath: String?
+
+    var id: String { name }
+
+    var statusLabel: String {
+        if running || status == "started" { return "Running" }
+        if status == "scheduled" { return "Scheduled" }
+        if status == "error" { return "Error" }
+        if status == "stopped" || status == "none" { return "Stopped" }
+        if let status, !status.isEmpty { return status.capitalized }
+        if loaded { return "Loaded" }
+        return "Stopped"
+    }
+
+    var isHealthy: Bool {
+        running || status == "started" || (!loaded && status != "error")
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case serviceName = "service_name"
+        case running, loaded, pid
+        case exitCode = "exit_code"
+        case user, status, file
+        case logPath = "log_path"
+        case errorLogPath = "error_log_path"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        serviceName = try container.decodeIfPresent(String.self, forKey: .serviceName)
+        running = try container.decodeIfPresent(Bool.self, forKey: .running) ?? false
+        loaded = try container.decodeIfPresent(Bool.self, forKey: .loaded) ?? false
+        pid = try container.decodeIfPresent(Int.self, forKey: .pid)
+        exitCode = try container.decodeIfPresent(Int.self, forKey: .exitCode)
+        user = try container.decodeIfPresent(String.self, forKey: .user)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        file = try container.decodeIfPresent(String.self, forKey: .file)
+        logPath = try container.decodeIfPresent(String.self, forKey: .logPath)
+        errorLogPath = try container.decodeIfPresent(String.self, forKey: .errorLogPath)
+    }
+
+    init(
+        name: String, serviceName: String?, running: Bool, loaded: Bool,
+        pid: Int?, exitCode: Int?, user: String?, status: String?,
+        file: String?, logPath: String?, errorLogPath: String?
+    ) {
+        self.name = name
+        self.serviceName = serviceName
+        self.running = running
+        self.loaded = loaded
+        self.pid = pid
+        self.exitCode = exitCode
+        self.user = user
+        self.status = status
+        self.file = file
+        self.logPath = logPath
+        self.errorLogPath = errorLogPath
     }
 }
 

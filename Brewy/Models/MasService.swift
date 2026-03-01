@@ -7,14 +7,12 @@ private let logger = Logger(subsystem: "io.linnane.brewy", category: "MasService
 
 enum MasParser {
 
-    /// Parses `mas list` output: `497799835 Xcode (15.4)`
     static func parseList(_ output: String) -> [BrewPackage] {
         var packages: [BrewPackage] = []
         for line in output.split(separator: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
 
-            // Format: <id> <name> (<version>)
             guard let firstSpace = trimmed.firstIndex(of: " ") else { continue }
             let appId = String(trimmed[trimmed.startIndex..<firstSpace])
             guard Int(appId) != nil else { continue }
@@ -49,7 +47,6 @@ enum MasParser {
         return packages
     }
 
-    /// Parses `mas outdated` output: `497799835 Xcode (15.4 -> 16.0)`
     static func parseOutdated(_ output: String) -> [BrewPackage] {
         var packages: [BrewPackage] = []
         for line in output.split(separator: "\n") {
