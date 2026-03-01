@@ -22,6 +22,7 @@ struct SidebarView: View {
 
     private func count(for category: SidebarCategory) -> Int? {
         switch category {
+        case .masApps: brewService.isMasAvailable ? brewService.packages(for: category).count : nil
         case .taps: brewService.installedTaps.count
         case .discover: nil
         case .maintenance: nil
@@ -59,6 +60,7 @@ private struct SidebarRow: View {
         case .installed: .blue
         case .formulae: .green
         case .casks: .purple
+        case .masApps: .pink
         case .outdated: .orange
         case .pinned: .red
         case .leaves: .mint

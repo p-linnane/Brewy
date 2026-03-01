@@ -36,7 +36,10 @@ struct ContentView: View {
             )
             .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
         } content: {
-            if selectedCategory == .taps {
+            if selectedCategory == .masApps, !brewService.isMasAvailable {
+                MasSetupView()
+                    .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
+            } else if selectedCategory == .taps {
                 TapListView(selectedTap: $selectedTap)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .discover {
@@ -54,7 +57,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             }
         } detail: {
-            if selectedCategory == .maintenance {
+            if selectedCategory == .maintenance || (selectedCategory == .masApps && !brewService.isMasAvailable) {
                 Color.clear
                     .navigationSplitViewColumnWidth(0)
             } else if selectedCategory == .taps, let tap = selectedTap {
@@ -121,7 +124,11 @@ struct ContentView: View {
 
     private func navigateToPackage(_ name: String) {
         if let match = brewService.allInstalled.first(where: { $0.name == name }) {
-            selectedCategory = match.isCask ? .casks : .formulae
+            switch match.source {
+            case .formula: selectedCategory = .formulae
+            case .cask: selectedCategory = .casks
+            case .mas: selectedCategory = .masApps
+            }
             selectedPackage = match
         }
     }

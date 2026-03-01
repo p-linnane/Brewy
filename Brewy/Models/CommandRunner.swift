@@ -51,14 +51,23 @@ enum CommandRunner {
         brewPath: String,
         timeout: Duration = defaultTimeout
     ) async -> CommandResult {
-        let commandDescription = "brew \(arguments.joined(separator: " "))"
+        await runExecutable(brewPath, arguments: arguments, timeout: timeout)
+    }
+
+    static func runExecutable(
+        _ executablePath: String,
+        arguments: [String],
+        timeout: Duration = defaultTimeout
+    ) async -> CommandResult {
+        let execName = URL(fileURLWithPath: executablePath).lastPathComponent
+        let commandDescription = "\(execName) \(arguments.joined(separator: " "))"
         logger.info("Running: \(commandDescription)")
         let startTime = ContinuousClock.now
 
         let result = await Task.detached(priority: .medium) {
             executeProcess(
                 arguments: arguments,
-                brewPath: brewPath,
+                brewPath: executablePath,
                 timeout: timeout,
                 commandDescription: commandDescription
             )
@@ -72,6 +81,14 @@ enum CommandRunner {
         }
 
         return result
+    }
+
+    static func resolvedMasPath() -> String {
+        let paths = ["/opt/homebrew/bin/mas", "/usr/local/bin/mas"]
+        for path in paths where FileManager.default.isExecutableFile(atPath: path) {
+            return path
+        }
+        return paths[0]
     }
 
     // MARK: - Private

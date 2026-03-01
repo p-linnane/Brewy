@@ -14,7 +14,7 @@ struct BrewPackageTests {
             description: "Internet file retriever", homepage: "https://www.gnu.org/software/wget/",
             isInstalled: true, isOutdated: true,
             installedVersion: "1.21", latestVersion: "1.24",
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         #expect(pkg.displayVersion == "1.21 → 1.24")
@@ -28,7 +28,7 @@ struct BrewPackageTests {
             homepage: "https://curl.se",
             isInstalled: true, isOutdated: false,
             installedVersion: "8.5.0", latestVersion: nil,
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         #expect(pkg.displayVersion == "8.5.0")
@@ -41,7 +41,7 @@ struct BrewPackageTests {
             description: "", homepage: "",
             isInstalled: true, isOutdated: true,
             installedVersion: "1.21", latestVersion: nil,
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         #expect(pkg.displayVersion == "1.21")
@@ -54,7 +54,7 @@ struct BrewPackageTests {
             description: "", homepage: "",
             isInstalled: true, isOutdated: false,
             installedVersion: "2.43", latestVersion: nil,
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         let cask = BrewPackage(
@@ -62,7 +62,7 @@ struct BrewPackageTests {
             description: "", homepage: "",
             isInstalled: true, isOutdated: false,
             installedVersion: "2.43", latestVersion: nil,
-            isCask: true, pinned: false, installedOnRequest: true,
+            source: .cask, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         #expect(formula != cask)
@@ -75,7 +75,7 @@ struct BrewPackageTests {
             description: "VCS", homepage: "",
             isInstalled: true, isOutdated: false,
             installedVersion: "2.43", latestVersion: nil,
-            isCask: false, pinned: false, installedOnRequest: true,
+            source: .formula, pinned: false, installedOnRequest: true,
             dependencies: []
         )
         let second = BrewPackage(
@@ -83,7 +83,7 @@ struct BrewPackageTests {
             description: "Different desc", homepage: "https://git-scm.com",
             isInstalled: true, isOutdated: true,
             installedVersion: "2.43", latestVersion: "2.44",
-            isCask: false, pinned: true, installedOnRequest: false,
+            source: .formula, pinned: true, installedOnRequest: false,
             dependencies: ["curl"]
         )
         #expect(first == second)
@@ -354,5 +354,71 @@ struct BrewJSONParsingTests {
         #expect(pkg.version == "unknown")
         #expect(pkg.dependencies.isEmpty)
         #expect(pkg.pinned == false)
+    }
+}
+
+// MARK: - PackageSource Tests
+
+@Suite("PackageSource")
+struct PackageSourceTests {
+
+    @Test("isCask computed property works correctly")
+    func isCaskComputed() {
+        let formula = BrewPackage(
+            id: "formula-test", name: "test", version: "1.0",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "1.0", latestVersion: nil,
+            source: .formula, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        let cask = BrewPackage(
+            id: "cask-test", name: "test", version: "1.0",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "1.0", latestVersion: nil,
+            source: .cask, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        let mas = BrewPackage(
+            id: "mas-test", name: "test", version: "1.0",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "1.0", latestVersion: nil,
+            source: .mas, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+
+        #expect(formula.isCask == false)
+        #expect(formula.isMas == false)
+        #expect(cask.isCask == true)
+        #expect(cask.isMas == false)
+        #expect(mas.isCask == false)
+        #expect(mas.isMas == true)
+    }
+
+    @Test("PackageSource encodes and decodes correctly")
+    func sourceEncodeDecode() throws {
+        let pkg = BrewPackage(
+            id: "mas-123", name: "TestApp", version: "1.0",
+            description: "", homepage: "",
+            isInstalled: true, isOutdated: false,
+            installedVersion: "1.0", latestVersion: nil,
+            source: .mas, pinned: false, installedOnRequest: true,
+            dependencies: []
+        )
+        let data = try JSONEncoder().encode(pkg)
+        let decoded = try JSONDecoder().decode(BrewPackage.self, from: data)
+        #expect(decoded.source == .mas)
+        #expect(decoded.isMas == true)
+        #expect(decoded.isCask == false)
+    }
+
+    @Test("SidebarCategory.masApps has correct properties")
+    func masAppsCategoryProperties() {
+        let category = SidebarCategory.masApps
+        #expect(category.rawValue == "Mac App Store")
+        #expect(!category.systemImage.isEmpty)
+        #expect(category.id == "Mac App Store")
     }
 }
