@@ -166,7 +166,8 @@ final class BrewService {
     }
 
     private func saveToCache() {
-        guard let cacheURL = Self.cacheURL else { return }
+        guard let cacheURL = Self.cacheURL,
+              ProcessInfo.processInfo.environment["XCTestBundlePath"] == nil else { return }
         let cached = CachedData(
             formulae: installedFormulae,
             casks: installedCasks,

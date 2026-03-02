@@ -48,7 +48,8 @@ enum TapHealthChecker {
     }
 
     static func saveCache(_ statuses: [String: TapHealthStatus]) {
-        guard let cacheURL else { return }
+        guard let cacheURL,
+              ProcessInfo.processInfo.environment["XCTestBundlePath"] == nil else { return }
         Task.detached(priority: .utility) {
             do {
                 let data = try JSONEncoder().encode(statuses)

@@ -6,20 +6,27 @@ struct PackageDetailView: View {
     @State private var detailedInfo: String = ""
     @State private var isLoadingInfo = false
     @State private var showUninstallConfirm = false
+    @State private var enrichedPackage: BrewPackage?
+
+    private var displayPackage: BrewPackage {
+        enrichedPackage ?? package
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                PackageHeader(package: package)
+                PackageHeader(package: displayPackage)
                 Divider()
                     .padding(.horizontal)
                 ActionBar(
-                    package: package,
+                    package: displayPackage,
                     showUninstallConfirm: $showUninstallConfirm
                 )
+                .id(displayPackage.homepage)
                 Divider()
                     .padding(.horizontal)
-                PackageInfoSection(package: package)
+                PackageInfoSection(package: displayPackage)
+                .id(displayPackage.description)
                 if !package.isMas {
                     Divider()
                         .padding(.horizontal)
@@ -32,9 +39,17 @@ struct PackageDetailView: View {
         .background(.background)
         .task(id: package.id) {
             guard !package.isMas else { return }
+            enrichedPackage = nil
             detailedInfo = ""
             isLoadingInfo = true
-            detailedInfo = await brewService.info(for: package)
+            if package.homepage.isEmpty {
+                async let details = brewService.fetchPackageDetail(for: package)
+                async let info = brewService.info(for: package)
+                enrichedPackage = await details
+                detailedInfo = await info
+            } else {
+                detailedInfo = await brewService.info(for: package)
+            }
             isLoadingInfo = false
         }
         .confirmationDialog(
