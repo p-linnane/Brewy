@@ -8,6 +8,8 @@ struct MaintenanceView: View {
     @State private var cacheSizeBytes: Int64?
     @State private var brewConfig: BrewConfig?
     @State private var isLoadingConfig = true
+    @State private var showRemoveOrphansConfirm = false
+    @State private var showClearCacheConfirm = false
 
     var body: some View {
         Form {
@@ -18,6 +20,27 @@ struct MaintenanceView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Maintenance")
+        .sheet(isPresented: $showRemoveOrphansConfirm) {
+            DryRunConfirmationSheet(
+                title: "Remove Orphaned Packages?",
+                message: "The following packages were installed as dependencies but are no longer needed.",
+                confirmLabel: "Remove Orphans",
+                dryRunAction: { await brewService.dryRunAutoremove() },
+                confirmAction: { await brewService.removeOrphans() }
+            )
+        }
+        .sheet(isPresented: $showClearCacheConfirm) {
+            DryRunConfirmationSheet(
+                title: "Clear Download Cache?",
+                message: "The following cached downloads and old versions will be removed.",
+                confirmLabel: "Clear Cache",
+                dryRunAction: { await brewService.dryRunCleanup() },
+                confirmAction: {
+                    await brewService.purgeCache()
+                    await loadCacheSize()
+                }
+            )
+        }
         .task {
             async let cacheTask: () = loadCacheSize()
             async let configTask: () = loadConfig()
@@ -83,7 +106,7 @@ struct MaintenanceView: View {
                         .controlSize(.small)
                 }
                 Button("Remove Orphans") {
-                    Task { await brewService.removeOrphans() }
+                    showRemoveOrphansConfirm = true
                 }
                 .disabled(brewService.isPerformingAction)
             }
@@ -112,10 +135,7 @@ struct MaintenanceView: View {
                 }
 
                 Button("Clear Cache") {
-                    Task {
-                        await brewService.purgeCache()
-                        await loadCacheSize()
-                    }
+                    showClearCacheConfirm = true
                 }
                 .disabled(brewService.isPerformingAction)
             }
