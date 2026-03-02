@@ -105,6 +105,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
     case taps = "Taps"
     case services = "Services"
     case groups = "Groups"
+    case history = "History"
     case discover = "Discover"
     case maintenance = "Maintenance"
 
@@ -122,6 +123,7 @@ enum SidebarCategory: String, CaseIterable, Identifiable {
         case .taps: "spigot.fill"
         case .services: "gearshape.2"
         case .groups: "folder.fill"
+        case .history: "clock.arrow.circlepath"
         case .discover: "magnifyingglass"
         case .maintenance: "wrench.and.screwdriver.fill"
         }
@@ -141,6 +143,40 @@ struct PackageGroup: Identifiable, Codable, Hashable {
         self.name = name
         self.systemImage = systemImage
         self.packageIDs = packageIDs
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+// MARK: - Action History Entry
+
+struct ActionHistoryEntry: Identifiable, Codable, Hashable {
+    let id: UUID
+    let command: String
+    let arguments: [String]
+    let packageName: String?
+    let packageSource: PackageSource?
+    let status: Status
+    let output: String
+    let timestamp: Date
+
+    enum Status: String, Codable {
+        case success
+        case failure
+    }
+
+    var displayCommand: String {
+        "brew " + arguments.joined(separator: " ")
+    }
+
+    var isRetryable: Bool {
+        status == .failure && !arguments.isEmpty
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {

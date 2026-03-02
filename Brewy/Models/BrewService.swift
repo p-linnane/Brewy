@@ -63,6 +63,7 @@ final class BrewService {
     var lastUpdated: Date?
     var tapHealthStatuses: [String: TapHealthStatus] = [:]
     var packageGroups: [PackageGroup] = []
+    var actionHistory: [ActionHistoryEntry] = []
 
     private var tapsLoaded = false
     @ObservationIgnored private var isBatchingUpdates = false
@@ -118,6 +119,7 @@ final class BrewService {
         case .taps: []
         case .services: []
         case .groups: []
+        case .history: []
         case .discover: searchResults
         case .maintenance: []
         }
@@ -336,6 +338,7 @@ final class BrewService {
         if !result.success {
             lastError = .commandFailed(command: arguments.first ?? "", output: result.output)
         }
+        recordAction(arguments: arguments, packageName: nil, packageSource: nil, success: result.success, output: result.output)
         return result.success
     }
 
@@ -349,20 +352,25 @@ final class BrewService {
         let casks = packages.filter { $0.source == .cask }.map(\.name)
 
         if !formulae.isEmpty {
-            let result = await runBrewCommand(["upgrade"] + formulae)
+            let args = ["upgrade"] + formulae
+            let result = await runBrewCommand(args)
             actionOutput += result.output
             if !result.success { lastError = .commandFailed(command: "upgrade", output: result.output) }
+            recordAction(arguments: args, packageName: nil, packageSource: .formula, success: result.success, output: result.output)
         }
         if !casks.isEmpty {
-            let result = await runBrewCommand(["upgrade", "--cask"] + casks)
+            let args = ["upgrade", "--cask"] + casks
+            let result = await runBrewCommand(args)
             actionOutput += result.output
             if !result.success { lastError = .commandFailed(command: "upgrade --cask", output: result.output) }
+            recordAction(arguments: args, packageName: nil, packageSource: .cask, success: result.success, output: result.output)
         }
         await refresh()
     }
 
     func doctor() async -> String {
         let result = await runBrewCommand(["doctor"])
+        recordAction(arguments: ["doctor"], packageName: nil, packageSource: nil, success: result.success, output: result.output)
         return result.output
     }
 
@@ -431,6 +439,7 @@ final class BrewService {
         if !result.success {
             lastError = .commandFailed(command: arguments.joined(separator: " "), output: result.output)
         }
+        recordAction(arguments: arguments, packageName: nil, packageSource: nil, success: result.success, output: result.output)
         if refreshAfter {
             await refresh()
         }
@@ -457,6 +466,7 @@ final class BrewService {
             logger.warning("\(action) failed for \(package.name): \(result.output.prefix(200))")
             lastError = .commandFailed(command: action, output: result.output)
         }
+        recordAction(arguments: args, packageName: package.name, packageSource: package.source, success: result.success, output: result.output)
         await refresh()
     }
 
@@ -574,24 +584,7 @@ final class BrewService {
         return packages
     }
 
-    nonisolated static func mergeOutdatedStatus(
-        _ pkg: BrewPackage,
-        outdatedByID: [String: BrewPackage]
-    ) -> BrewPackage {
-        guard let outdatedPkg = outdatedByID[pkg.id] else { return pkg }
-        return BrewPackage(
-            id: pkg.id, name: pkg.name, version: pkg.version,
-            description: pkg.description, homepage: pkg.homepage,
-            isInstalled: pkg.isInstalled, isOutdated: true,
-            installedVersion: pkg.installedVersion,
-            latestVersion: outdatedPkg.latestVersion,
-            source: pkg.source, pinned: pkg.pinned,
-            installedOnRequest: pkg.installedOnRequest,
-            dependencies: pkg.dependencies
-        )
-    }
-
-    private func runBrewCommand(_ arguments: [String]) async -> CommandResult {
+    func runBrewCommand(_ arguments: [String]) async -> CommandResult {
         let brewPath = CommandRunner.resolvedBrewPath(preferred: customBrewPath)
         return await CommandRunner.run(arguments, brewPath: brewPath)
     }

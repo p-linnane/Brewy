@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var selectedTap: BrewTap?
     @State private var selectedServiceItem: BrewServiceItem?
     @State private var selectedGroupItem: PackageGroup?
+    @State private var selectedHistoryEntry: ActionHistoryEntry?
     @State private var servicesRefreshTrigger = false
     @State private var searchText = ""
     @State private var showError = false
@@ -51,6 +52,9 @@ struct ContentView: View {
             } else if selectedCategory == .groups {
                 GroupsView(selectedGroup: $selectedGroupItem)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
+            } else if selectedCategory == .history {
+                HistoryView(selectedEntry: $selectedHistoryEntry)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             } else if selectedCategory == .discover {
                 DiscoverView(selectedPackage: $selectedPackage)
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
@@ -66,49 +70,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 500)
             }
         } detail: {
-            if selectedCategory == .maintenance || (selectedCategory == .masApps && !brewService.isMasAvailable) {
-                Color.clear
-                    .navigationSplitViewColumnWidth(0)
-            } else if selectedCategory == .services, let service = selectedServiceItem {
-                ServiceDetailView(service: service) {
-                    servicesRefreshTrigger.toggle()
-                }
-                .id(service.id)
-                .navigationSplitViewColumnWidth(ideal: 450)
-            } else if selectedCategory == .services {
-                EmptyStateView(
-                    icon: "gearshape.2",
-                    title: "Select a Service",
-                    subtitle: "Choose a service from the list to view its details and controls."
-                )
-            } else if selectedCategory == .groups, let group = selectedGroupItem,
-                      brewService.packageGroups.contains(where: { $0.id == group.id }) {
-                GroupDetailView(group: brewService.packageGroups.first { $0.id == group.id }!)
-                    .id(group.id)
-                    .navigationSplitViewColumnWidth(ideal: 450)
-            } else if selectedCategory == .groups {
-                EmptyStateView(
-                    icon: "folder",
-                    title: "Select a Group",
-                    subtitle: "Choose a group from the list to view its packages."
-                )
-            } else if selectedCategory == .taps, let tap = selectedTap {
-                TapDetailView(tap: tap)
-            } else if selectedCategory == .taps {
-                EmptyStateView(
-                    icon: "spigot",
-                    title: "Select a Tap",
-                    subtitle: "Choose a tap from the list to view its details."
-                )
-            } else if let selectedPackage {
-                let package = brewService.allInstalled.first(where: { $0.id == selectedPackage.id }) ?? selectedPackage
-                PackageDetailView(package: package)
-                    .id(package.id)
-                    .navigationSplitViewColumnWidth(ideal: 450)
-            } else {
-                EmptyStateView()
-                    .navigationSplitViewColumnWidth(ideal: 450)
-            }
+            detailView
         }
         .environment(\.selectPackage) { [self] name in navigateToPackage(name) }
         .task {
@@ -118,6 +80,7 @@ struct ContentView: View {
             brewService.loadFromCache()
             brewService.loadTapHealthCache()
             brewService.loadGroups()
+            brewService.loadHistory()
             await brewService.refresh()
         }
         .task(id: autoRefreshInterval) {
@@ -152,6 +115,63 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .showWhatsNew)) { _ in
             showWhatsNew = true
+        }
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        if selectedCategory == .maintenance || (selectedCategory == .masApps && !brewService.isMasAvailable) {
+            Color.clear
+                .navigationSplitViewColumnWidth(0)
+        } else if selectedCategory == .services, let service = selectedServiceItem {
+            ServiceDetailView(service: service) {
+                servicesRefreshTrigger.toggle()
+            }
+            .id(service.id)
+            .navigationSplitViewColumnWidth(ideal: 450)
+        } else if selectedCategory == .services {
+            EmptyStateView(
+                icon: "gearshape.2",
+                title: "Select a Service",
+                subtitle: "Choose a service from the list to view its details and controls."
+            )
+        } else if selectedCategory == .groups, let group = selectedGroupItem,
+                  brewService.packageGroups.contains(where: { $0.id == group.id }) {
+            GroupDetailView(group: brewService.packageGroups.first { $0.id == group.id }!)
+                .id(group.id)
+                .navigationSplitViewColumnWidth(ideal: 450)
+        } else if selectedCategory == .groups {
+            EmptyStateView(
+                icon: "folder",
+                title: "Select a Group",
+                subtitle: "Choose a group from the list to view its packages."
+            )
+        } else if selectedCategory == .history, let entry = selectedHistoryEntry {
+            HistoryDetailView(entry: entry)
+                .id(entry.id)
+                .navigationSplitViewColumnWidth(ideal: 450)
+        } else if selectedCategory == .history {
+            EmptyStateView(
+                icon: "clock.arrow.circlepath",
+                title: "Select an Action",
+                subtitle: "Choose an action from the history to view its details."
+            )
+        } else if selectedCategory == .taps, let tap = selectedTap {
+            TapDetailView(tap: tap)
+        } else if selectedCategory == .taps {
+            EmptyStateView(
+                icon: "spigot",
+                title: "Select a Tap",
+                subtitle: "Choose a tap from the list to view its details."
+            )
+        } else if let selectedPackage {
+            let package = brewService.allInstalled.first(where: { $0.id == selectedPackage.id }) ?? selectedPackage
+            PackageDetailView(package: package)
+                .id(package.id)
+                .navigationSplitViewColumnWidth(ideal: 450)
+        } else {
+            EmptyStateView()
+                .navigationSplitViewColumnWidth(ideal: 450)
         }
     }
 

@@ -471,7 +471,7 @@ private struct GroupMenuItems: View {
 
 // MARK: - Action Overlay
 
-private struct ActionOverlay: View {
+struct ActionOverlay: View {
     let output: String
 
     var body: some View {
