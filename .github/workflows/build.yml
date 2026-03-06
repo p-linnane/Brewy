@@ -1,13 +1,6 @@
 name: Test
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "**/*.swift"
-      - "Brewy.xcodeproj/**"
-      - ".github/workflows/build.yml"
   pull_request:
     paths:
       - "**/*.swift"
@@ -35,21 +28,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Cache SPM packages
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          path: .spm-cache
-          key: spm-${{ runner.os }}-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            spm-${{ runner.os }}-
-
       - name: Test with Thread Sanitizer
         run: |
           xcodebuild test \
             -project Brewy.xcodeproj \
             -scheme Brewy \
             -destination 'platform=macOS' \
-            -clonedSourcePackagesDirPath .spm-cache \
             -enableCodeCoverage YES \
             -enableThreadSanitizer YES \
             -resultBundlePath TestResults.xcresult \
@@ -81,21 +65,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Cache SPM packages
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
-        with:
-          path: .spm-cache
-          key: spm-${{ runner.os }}-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            spm-${{ runner.os }}-
-
       - name: Test with Address Sanitizer
         run: |
           xcodebuild test \
             -project Brewy.xcodeproj \
             -scheme Brewy \
             -destination 'platform=macOS' \
-            -clonedSourcePackagesDirPath .spm-cache \
             -enableAddressSanitizer YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
