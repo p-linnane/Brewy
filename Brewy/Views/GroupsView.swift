@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct GroupsView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @Binding var selectedGroup: PackageGroup?
     @State private var showCreateSheet = false
 
@@ -48,7 +49,8 @@ struct GroupsView: View {
 // MARK: - Group Row
 
 private struct GroupRow: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let group: PackageGroup
 
     var body: some View {
@@ -75,8 +77,10 @@ private struct GroupRow: View {
 // MARK: - Create Group Sheet
 
 private struct CreateGroupSheet: View {
-    @Environment(BrewService.self) private var brewService
-    @Environment(\.dismiss) private var dismiss
+    @Environment(BrewService.self)
+    private var brewService
+    @Environment(\.dismiss)
+    private var dismiss
     @State private var name = ""
     @State private var selectedIcon = "folder.fill"
 
@@ -141,8 +145,10 @@ private struct CreateGroupSheet: View {
 // MARK: - Group Detail View
 
 struct GroupDetailView: View {
-    @Environment(BrewService.self) private var brewService
-    @Environment(\.selectPackage) private var selectPackage
+    @Environment(BrewService.self)
+    private var brewService
+    @Environment(\.selectPackage)
+    private var selectPackage
     let group: PackageGroup
     @State private var showEditSheet = false
     @State private var showDeleteConfirm = false
@@ -205,8 +211,7 @@ struct GroupDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private var packagesSection: some View {
+    @ViewBuilder private var packagesSection: some View {
         if groupPackages.isEmpty {
             Section {
                 ContentUnavailableView(
@@ -311,8 +316,10 @@ private struct GroupPackageRow: View {
 // MARK: - Edit Group Sheet
 
 private struct EditGroupSheet: View {
-    @Environment(BrewService.self) private var brewService
-    @Environment(\.dismiss) private var dismiss
+    @Environment(BrewService.self)
+    private var brewService
+    @Environment(\.dismiss)
+    private var dismiss
     let group: PackageGroup
     @State private var name: String
     @State private var selectedIcon: String

@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct MaintenanceView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @State private var doctorOutput: String?
     @State private var isRunningDoctor = false
     @State private var isCalculatingCache = false

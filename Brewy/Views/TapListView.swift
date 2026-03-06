@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct TapListView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @Binding var selectedTap: BrewTap?
     @State private var showAddSheet = false
 
@@ -150,8 +151,10 @@ private struct TapHealthBadge: View {
 // MARK: - Add Tap Sheet
 
 private struct AddTapSheet: View {
-    @Environment(BrewService.self) private var brewService
-    @Environment(\.dismiss) private var dismiss
+    @Environment(BrewService.self)
+    private var brewService
+    @Environment(\.dismiss)
+    private var dismiss
     @State private var tapName = ""
     @State private var isAdding = false
     @State private var errorMessage: String?
@@ -222,7 +225,8 @@ private struct AddTapSheet: View {
 // MARK: - Tap Detail
 
 struct TapDetailView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let tap: BrewTap
 
     private var installedFormulae: [BrewPackage] {
@@ -288,7 +292,8 @@ struct TapDetailView: View {
 // MARK: - Tap Health Warning
 
 private struct TapHealthWarningSection: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let tap: BrewTap
     let healthStatus: TapHealthStatus
     @State private var showMigrateConfirmation = false

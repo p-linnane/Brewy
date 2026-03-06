@@ -1,6 +1,6 @@
+@testable import Brewy
 import Foundation
 import Testing
-@testable import Brewy
 
 // MARK: - Services Parsing Tests
 
@@ -21,7 +21,7 @@ struct ServicesParsingTests {
         #expect(services[0].name == "postgresql@14")
         #expect(services[0].running == true)
         #expect(services[0].loaded == true)
-        #expect(services[0].pid == 1234)
+        #expect(services[0].pid == 1_234)
         #expect(services[0].user == "patrick")
         #expect(services[0].statusLabel == "Running")
         #expect(services[0].serviceName == "homebrew.mxcl.postgresql@14")

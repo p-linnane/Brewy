@@ -6,7 +6,8 @@ enum SearchScope: String, CaseIterable {
 }
 
 struct PackageListView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let selectedCategory: SidebarCategory?
     @Binding var selectedPackage: BrewPackage?
     @Binding var searchText: String
@@ -135,8 +136,7 @@ struct PackageListView: View {
         selectedCategory?.rawValue ?? "Packages"
     }
 
-    @ViewBuilder
-    private var emptyContent: some View {
+    @ViewBuilder private var emptyContent: some View {
         if brewService.isLoading {
             EmptyView()
         } else if isSearchingAll, searchText.isEmpty {
@@ -160,7 +160,8 @@ struct PackageListView: View {
 // MARK: - Toolbar
 
 private struct PackageListToolbar: ToolbarContent {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let isOutdated: Bool
     @Binding var isSelecting: Bool
     @Binding var selectedForUpgrade: Set<String>

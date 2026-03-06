@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct SidebarView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @Binding var selectedCategory: SidebarCategory?
 
     var body: some View {
@@ -80,7 +81,8 @@ private struct SidebarRow: View {
 // MARK: - Sidebar Footer
 
 private struct SidebarFooter: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
 
     var body: some View {
         VStack(spacing: 0) {

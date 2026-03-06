@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct MasSetupView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
 
     var body: some View {
         VStack(spacing: 20) {

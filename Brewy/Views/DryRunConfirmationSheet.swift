@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct DryRunConfirmationSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)
+    private var dismiss
     let title: String
     let message: String
     let confirmLabel: String
@@ -44,8 +45,7 @@ struct DryRunConfirmationSheet: View {
         }
     }
 
-    @ViewBuilder
-    private var previewSection: some View {
+    @ViewBuilder private var previewSection: some View {
         if isLoadingPreview {
             HStack(spacing: 8) {
                 ProgressView()

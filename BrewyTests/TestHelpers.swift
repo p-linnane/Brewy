@@ -1,6 +1,6 @@
+@testable import Brewy
 import Foundation
 import Testing
-@testable import Brewy
 
 // MARK: - Mock Command Runner
 

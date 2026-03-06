@@ -17,10 +17,14 @@ enum AppTheme: String, CaseIterable, Identifiable {
 }
 
 struct SettingsView: View {
-    @AppStorage("brewPath") private var brewPath = "/opt/homebrew/bin/brew"
-    @AppStorage("autoRefreshInterval") private var autoRefreshInterval = 0
-    @AppStorage("showCasksByDefault") private var showCasksByDefault = false
-    @AppStorage("appTheme") private var appTheme = AppTheme.system.rawValue
+    @AppStorage("brewPath")
+    private var brewPath = "/opt/homebrew/bin/brew"
+    @AppStorage("autoRefreshInterval")
+    private var autoRefreshInterval = 0
+    @AppStorage("showCasksByDefault")
+    private var showCasksByDefault = false
+    @AppStorage("appTheme")
+    private var appTheme = AppTheme.system.rawValue
 
     var body: some View {
         Form {
@@ -31,7 +35,7 @@ struct SettingsView: View {
                 Text("Off").tag(0)
                 Text("Every 5 minutes").tag(300)
                 Text("Every 15 minutes").tag(900)
-                Text("Every hour").tag(3600)
+                Text("Every hour").tag(3_600)
             }
 
             Picker("Appearance:", selection: $appTheme) {

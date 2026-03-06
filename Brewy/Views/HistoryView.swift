@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @Binding var selectedEntry: ActionHistoryEntry?
 
     var body: some View {
@@ -69,7 +70,8 @@ private struct HistoryRow: View {
 // MARK: - History Detail View
 
 struct HistoryDetailView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     let entry: ActionHistoryEntry
 
     var body: some View {

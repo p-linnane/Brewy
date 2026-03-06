@@ -18,10 +18,14 @@ extension EnvironmentValues {
 }
 
 struct ContentView: View {
-    @Environment(BrewService.self) private var brewService
-    @AppStorage("autoRefreshInterval") private var autoRefreshInterval = 0
-    @AppStorage("showCasksByDefault") private var showCasksByDefault = false
-    @AppStorage("lastSeenVersion") private var lastSeenVersion = ""
+    @Environment(BrewService.self)
+    private var brewService
+    @AppStorage("autoRefreshInterval")
+    private var autoRefreshInterval = 0
+    @AppStorage("showCasksByDefault")
+    private var showCasksByDefault = false
+    @AppStorage("lastSeenVersion")
+    private var lastSeenVersion = ""
     @State private var selectedCategory: SidebarCategory? = .installed
     @State private var selectedPackage: BrewPackage?
     @State private var selectedTap: BrewTap?
@@ -118,8 +122,7 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
-    private var detailView: some View {
+    @ViewBuilder private var detailView: some View {
         if selectedCategory == .maintenance || (selectedCategory == .masApps && !brewService.isMasAvailable) {
             Color.clear
                 .navigationSplitViewColumnWidth(0)

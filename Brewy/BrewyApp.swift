@@ -10,7 +10,8 @@ struct BrewyApp: App {
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     }
 
-    @AppStorage("appTheme") private var appTheme = AppTheme.system.rawValue
+    @AppStorage("appTheme")
+    private var appTheme = AppTheme.system.rawValue
 
     // HACK: there is a known color scheme bug in SwiftUI where passing `nil` to `.preferredColorScheme`
     // doesn't change the color of some elements:
@@ -110,8 +111,10 @@ private struct CheckForUpdatesView: View {
 // MARK: - Menu Bar View
 
 private struct MenuBarView: View {
-    @Environment(BrewService.self) private var brewService
-    @Environment(\.openWindow) private var openWindow
+    @Environment(BrewService.self)
+    private var brewService
+    @Environment(\.openWindow)
+    private var openWindow
 
     var body: some View {
         let outdatedCount = brewService.outdatedPackages.count

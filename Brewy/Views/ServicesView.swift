@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct ServicesView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @State private var services: [BrewServiceItem] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -108,8 +109,7 @@ private struct ServiceRow: View {
         .padding(.vertical, 2)
     }
 
-    @ViewBuilder
-    private var statusIndicator: some View {
+    @ViewBuilder private var statusIndicator: some View {
         Circle()
             .fill(statusColor)
             .frame(width: 8, height: 8)
@@ -129,7 +129,8 @@ private struct ServiceRow: View {
 struct ServiceDetailView: View {
     let service: BrewServiceItem
     let onRefresh: () async -> Void
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @State private var isPerformingAction = false
     @State private var actionOutput: String?
     @State private var errorMessage: String?

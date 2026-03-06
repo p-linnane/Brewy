@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct WhatsNewView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)
+    private var dismiss
     @State private var release: AppcastRelease?
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -39,8 +40,7 @@ struct WhatsNewView: View {
 
     // MARK: - Content
 
-    @ViewBuilder
-    private var content: some View {
+    @ViewBuilder private var content: some View {
         if isLoading {
             VStack {
                 Spacer()

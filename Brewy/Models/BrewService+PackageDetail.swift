@@ -30,7 +30,8 @@ extension BrewService {
                         installedOnRequest: package.installedOnRequest,
                         dependencies: package.dependencies
                     )
-                } else if let formula = response.formulae?.first {
+                }
+                if let formula = response.formulae?.first {
                     return BrewPackage(
                         id: package.id,
                         name: formula.name,

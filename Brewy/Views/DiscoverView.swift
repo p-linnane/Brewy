@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct DiscoverView: View {
-    @Environment(BrewService.self) private var brewService
+    @Environment(BrewService.self)
+    private var brewService
     @Binding var selectedPackage: BrewPackage?
     @State private var searchText = ""
     @State private var searchTask: Task<Void, Never>?
@@ -47,8 +48,7 @@ struct DiscoverView: View {
         )
     }
 
-    @ViewBuilder
-    private var emptyContent: some View {
+    @ViewBuilder private var emptyContent: some View {
         if searchText.isEmpty {
             ContentUnavailableView(
                 "Find New Packages",
