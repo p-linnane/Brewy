@@ -210,7 +210,7 @@ final class BrewService {
 
     func refresh() async {
         logger.info("Starting full refresh")
-        let previousVersions = Dictionary(uniqueKeysWithValues: allInstalled.map { ($0.id, $0.version) })
+        let previousVersions = Dictionary(allInstalled.map { ($0.id, $0.version) }, uniquingKeysWith: { _, last in last })
         let hadCachedData = !installedFormulae.isEmpty || !installedCasks.isEmpty
         if !hadCachedData {
             isLoading = true
@@ -232,7 +232,7 @@ final class BrewService {
         let fetchedMasApps = await masApps
         let fetchedMasOutdated = await masOutdated
         let allOutdated = fetchedOutdated + fetchedMasOutdated
-        let outdatedByID = Dictionary(uniqueKeysWithValues: allOutdated.map { ($0.id, $0) })
+        let outdatedByID = Dictionary(allOutdated.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
 
         updateInstalledPackages(
             formulae: fetchedFormulae.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
@@ -242,7 +242,7 @@ final class BrewService {
         outdatedPackages = allOutdated
         lastUpdated = Date()
 
-        let currentVersions = Dictionary(uniqueKeysWithValues: allInstalled.map { ($0.id, $0.version) })
+        let currentVersions = Dictionary(allInstalled.map { ($0.id, $0.version) }, uniquingKeysWith: { _, last in last })
         for id in infoCache.keys where currentVersions[id] != previousVersions[id] {
             infoCache.removeValue(forKey: id)
         }

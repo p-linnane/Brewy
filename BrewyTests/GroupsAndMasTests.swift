@@ -245,4 +245,37 @@ struct MasOutputParsingTests {
         let packages = MasParser.parseList(output)
         #expect(packages[0].homepage == "https://apps.apple.com/app/id497799835")
     }
+
+    @Test("parseMasList generates unique IDs for TestFlight apps with ID 0")
+    func parseMasListTestFlightApps() {
+        let output = """
+        0 App Alpha (1.0)
+        0 App Beta (2.0)
+        497799835 Xcode (15.4)
+        """
+        let packages = MasParser.parseList(output)
+        #expect(packages.count == 3)
+        #expect(packages[0].id == "mas-0-App Alpha")
+        #expect(packages[1].id == "mas-0-App Beta")
+        #expect(packages[2].id == "mas-497799835")
+        // TestFlight apps with ID 0 should not have an App Store URL
+        #expect(packages[0].homepage.isEmpty)
+        #expect(packages[1].homepage.isEmpty)
+        // All IDs must be unique (no Dictionary(uniqueKeysWithValues:) crash)
+        let ids = packages.map(\.id)
+        #expect(Set(ids).count == ids.count)
+    }
+
+    @Test("parseMasOutdated generates unique IDs for TestFlight apps with ID 0")
+    func parseMasOutdatedTestFlightApps() {
+        let output = """
+        0 App Alpha (1.0 -> 1.1)
+        0 App Beta (2.0 -> 2.1)
+        """
+        let packages = MasParser.parseOutdated(output)
+        #expect(packages.count == 2)
+        #expect(packages[0].id == "mas-0-App Alpha")
+        #expect(packages[1].id == "mas-0-App Beta")
+        #expect(packages[0].id != packages[1].id)
+    }
 }

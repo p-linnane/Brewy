@@ -28,12 +28,13 @@ enum MasParser {
                 version = String(rest[rest.index(after: parenOpen)..<parenClose])
             }
 
+            let uniqueId = appId == "0" ? "mas-0-\(name)" : "mas-\(appId)"
             packages.append(BrewPackage(
-                id: "mas-\(appId)",
+                id: uniqueId,
                 name: name,
                 version: version,
                 description: "",
-                homepage: "https://apps.apple.com/app/id\(appId)",
+                homepage: appId == "0" ? "" : "https://apps.apple.com/app/id\(appId)",
                 isInstalled: true,
                 isOutdated: false,
                 installedVersion: version,
@@ -79,12 +80,13 @@ enum MasParser {
                 }
             }
 
+            let uniqueId = appId == "0" ? "mas-0-\(name)" : "mas-\(appId)"
             packages.append(BrewPackage(
-                id: "mas-\(appId)",
+                id: uniqueId,
                 name: name,
                 version: installedVersion,
                 description: "",
-                homepage: "https://apps.apple.com/app/id\(appId)",
+                homepage: appId == "0" ? "" : "https://apps.apple.com/app/id\(appId)",
                 isInstalled: true,
                 isOutdated: true,
                 installedVersion: installedVersion,

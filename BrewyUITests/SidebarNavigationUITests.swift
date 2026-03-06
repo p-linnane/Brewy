@@ -20,9 +20,9 @@ final class SidebarNavigationUITests: XCTestCase {
 
     func testAllSidebarCategoriesRender() throws {
         let categories = [
-            "Installed", "Formulae", "Casks", "Outdated",
+            "Installed", "Formulae", "Casks", "Mac App Store", "Outdated",
             "Pinned", "Leaves", "Taps", "Services", "Groups",
-            "Discover", "Maintenance"
+            "History", "Discover", "Maintenance"
         ]
 
         let sidebar = app.outlines.firstMatch
@@ -43,9 +43,9 @@ final class SidebarNavigationUITests: XCTestCase {
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "Sidebar should exist")
 
         let expectedCategories = [
-            "Installed", "Formulae", "Casks", "Outdated",
+            "Installed", "Formulae", "Casks", "Mac App Store", "Outdated",
             "Pinned", "Leaves", "Taps", "Services", "Groups",
-            "Discover", "Maintenance"
+            "History", "Discover", "Maintenance"
         ]
 
         for category in expectedCategories {
