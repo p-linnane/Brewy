@@ -20,6 +20,7 @@ jobs:
   build:
     name: Build
     runs-on: macos-latest
+    environment: release
     outputs:
       tag: ${{ steps.version.outputs.tag }}
       artifact_name: "Brewy-${{ steps.version.outputs.tag }}.zip"
@@ -152,6 +153,7 @@ jobs:
     name: Upload
     needs: build
     runs-on: macos-latest
+    environment: release
     permissions:
       contents: write # required to create GitHub releases
     env:
@@ -266,6 +268,7 @@ jobs:
     name: Bump Homebrew cask
     needs: upload
     runs-on: macos-latest
+    environment: release
     permissions:
       contents: read
     env:
