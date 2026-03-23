@@ -1,0 +1,74 @@
+name: Conventional Commits
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+defaults:
+  run:
+    shell: bash -xeuo pipefail {0}
+
+concurrency:
+  group: "conventional-commits-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # required to fetch commits
+      pull-requests: read # required to read PR title
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'
+          if [[ ! "${PR_TITLE}" =~ ${PATTERN} ]]; then
+            echo "::error::PR title '${PR_TITLE}' does not follow Conventional Commits."
+            echo ""
+            echo "Expected format: <type>(<scope>): <description>"
+            echo ""
+            echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add Sparkle auto-update support"
+            echo "  fix(updater): resolve crash on empty appcast"
+            echo "  ci: automate appcast generation on release"
+            exit 1
+          fi
+
+      - name: Check commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'
+          FAILED=0
+          while IFS= read -r LINE; do
+            SHA="${LINE%% *}"
+            MSG="${LINE#* }"
+            # Skip merge commits
+            if [[ "${MSG}" == Merge\ * ]]; then
+              continue
+            fi
+            if [[ ! "${MSG}" =~ ${PATTERN} ]]; then
+              echo "::error::Commit ${SHA} does not follow Conventional Commits: '${MSG}'"
+              FAILED=1
+            fi
+          done < <(git log --format="%h %s" "${BASE_SHA}..${HEAD_SHA}")
+
+          if [[ "${FAILED}" -eq 1 ]]; then
+            echo ""
+            echo "All commit messages must follow: <type>(<scope>): <description>"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore"
+            exit 1
+          fi

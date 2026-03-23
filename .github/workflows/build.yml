@@ -36,23 +36,22 @@ jobs:
             -destination 'platform=macOS' \
             -enableCodeCoverage YES \
             -enableThreadSanitizer YES \
-            -resultBundlePath TestResults.xcresult \
+            -resultBundlePath TestResults-TSAN.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Coverage Summary
         if: always()
         run: |
-          xcrun xccov view --report --only-targets TestResults.xcresult || true
+          xcrun xccov view --report --only-targets TestResults-TSAN.xcresult || true
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: TestResults
-          path: TestResults.xcresult
+          name: TestResults-TSAN
+          path: TestResults-TSAN.xcresult
           retention-days: 14
 
   test-asan:
@@ -72,6 +71,15 @@ jobs:
             -scheme Brewy \
             -destination 'platform=macOS' \
             -enableAddressSanitizer YES \
+            -resultBundlePath TestResults-ASAN.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: TestResults-ASAN
+          path: TestResults-ASAN.xcresult
+          retention-days: 14

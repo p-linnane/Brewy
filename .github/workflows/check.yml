@@ -1,25 +1,25 @@
-name: SwiftLint
+name: Check
 
 on:
   pull_request:
-    paths:
-      - "**/*.swift"
-      - ".swiftlint.yml"
-      - ".github/workflows/swiftlint.yml"
 
 defaults:
   run:
     shell: bash -xeuo pipefail {0}
 
 concurrency:
-  group: "swiftlint-${{ github.ref }}"
+  group: "check-${{ github.ref }}"
   cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_ENV_HINTS: 1
 
 permissions: {}
 
 jobs:
-  lint:
-    name: SwiftLint
+  check:
+    name: just check
     runs-on: macos-latest
     permissions:
       contents: read
@@ -28,8 +28,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install SwiftLint
-        run: brew install swiftlint
+      - name: Install tools
+        run: brew install just swiftlint zizmor
 
-      - name: Lint
-        run: swiftlint lint --strict --reporter github-actions-logging
+      - name: Run checks
+        run: just check
