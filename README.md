@@ -4,17 +4,19 @@
 
 A native macOS app for managing [Homebrew](https://brew.sh) packages. Browse, search, install, and update formulae and casks — all without opening Terminal.
 
-> **Note:** Brewy is in early development and currently provides only basic functionality. Expect rough edges, missing features, and breaking changes.
-
 ## Features
 
 - Browse installed formulae and casks, including pinned packages and leaves
 - Discover and search all Homebrew/core and Homebrew/cask packages
 - View package details, dependencies, and reverse dependencies
-- Install, uninstall, upgrade, pin, and unpin packages
+- Install, uninstall, upgrade, reinstall, pin, and unpin packages
 - Upgrade all outdated packages at once, or select specific packages to upgrade
+- Mac App Store integration via [`mas`](https://github.com/mas-cli/mas) (browse installed apps, check for updates)
+- Manage Homebrew services (start, stop, restart)
+- Organize packages into custom groups
+- Action history with retry support for failed commands
 - Manage taps (add/remove third-party repositories) with health monitoring for archived, moved, and missing taps
-- Run `brew doctor`, remove orphaned packages, and clear the download cache
+- Run `brew doctor`, remove orphaned packages, and clear the download cache with dry-run previews
 - Menu bar extra showing outdated package count
 - Configurable auto-refresh interval and brew path
 - Light, dark, and system theme support
