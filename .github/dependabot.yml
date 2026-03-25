@@ -10,3 +10,14 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+    groups:
+      swift-dependencies:
+        patterns:
+          - "*"
