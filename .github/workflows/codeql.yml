@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - '**/*.swift'
-      - '*.xcodeproj/**'
+      - "**/*.swift"
+      - "Brewy.xcodeproj/**"
   pull_request:
     paths:
-      - '**/*.swift'
-      - '*.xcodeproj/**'
-      - '.github/workflows/codeql.yml'
+      - "**/*.swift"
+      - "Brewy.xcodeproj/**"
+      - ".github/workflows/codeql.yml"
 
 concurrency:
   group: "codeql-${{ github.ref }}"
