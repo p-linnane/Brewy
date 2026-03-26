@@ -5,12 +5,14 @@ on:
     branches:
       - main
     paths:
-      - "**/*.swift"
-      - "Brewy.xcodeproj/**"
+      - "Brewy/**"
+      - "BrewyTests/**"
+      - "BrewyUITests/**"
   pull_request:
     paths:
-      - "**/*.swift"
-      - "Brewy.xcodeproj/**"
+      - "Brewy/**"
+      - "BrewyTests/**"
+      - "BrewyUITests/**"
       - ".github/workflows/codeql.yml"
 
 concurrency:
