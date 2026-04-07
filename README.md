@@ -55,6 +55,6 @@ Thanks to [@bevanjkay](https://github.com/bevanjkay) for the logo idea.
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE) (`GPL-3.0-only`).
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
 
 Copyright (C) 2026 Patrick Linnane
