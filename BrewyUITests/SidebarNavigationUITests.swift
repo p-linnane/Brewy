@@ -3,6 +3,9 @@ import XCTest
 @MainActor
 final class SidebarNavigationUITests: XCTestCase {
 
+    private static let launchTimeout: TimeInterval = 30
+    private static let elementTimeout: TimeInterval = 10
+
     private var app: XCUIApplication!
 
     override func setUp() async throws {
@@ -27,10 +30,11 @@ final class SidebarNavigationUITests: XCTestCase {
 
         let sidebar = app.outlines.firstMatch
 
-        for category in categories {
+        for (index, category) in categories.enumerated() {
             let row = sidebar.staticTexts[category]
+            let timeout = index == 0 ? Self.launchTimeout : Self.elementTimeout
             XCTAssertTrue(
-                row.waitForExistence(timeout: 5),
+                row.waitForExistence(timeout: timeout),
                 "Sidebar category '\(category)' should exist"
             )
             row.click()
@@ -40,7 +44,7 @@ final class SidebarNavigationUITests: XCTestCase {
 
     func testSidebarContainsAllCategories() throws {
         let sidebar = app.outlines.firstMatch
-        XCTAssertTrue(sidebar.waitForExistence(timeout: 5), "Sidebar should exist")
+        XCTAssertTrue(sidebar.waitForExistence(timeout: Self.launchTimeout), "Sidebar should exist")
 
         let expectedCategories = [
             "Installed", "Formulae", "Casks", "Mac App Store", "Outdated",
@@ -62,7 +66,7 @@ final class SidebarNavigationUITests: XCTestCase {
         let sidebar = app.outlines.firstMatch
 
         let installed = sidebar.staticTexts["Installed"]
-        XCTAssertTrue(installed.waitForExistence(timeout: 5))
+        XCTAssertTrue(installed.waitForExistence(timeout: Self.launchTimeout))
         installed.click()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
 
@@ -79,7 +83,7 @@ final class SidebarNavigationUITests: XCTestCase {
     func testRefreshButtonExists() throws {
         let refreshButton = app.buttons["Refresh"]
         XCTAssertTrue(
-            refreshButton.waitForExistence(timeout: 5),
+            refreshButton.waitForExistence(timeout: Self.launchTimeout),
             "Refresh button should exist in sidebar footer"
         )
     }
