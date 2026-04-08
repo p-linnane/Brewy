@@ -10,7 +10,9 @@ extension BrewService {
     func fetchInstalledFormulae() async -> [BrewPackage] {
         let result = await runBrewCommand(["info", "--installed", "--json=v2"])
         guard result.success, let data = result.output.data(using: .utf8) else {
-            logger.warning("Failed to fetch installed formulae")
+            if !result.success {
+                lastError = .commandFailed(command: "info --installed", output: result.output)
+            }
             return []
         }
 
@@ -28,7 +30,9 @@ extension BrewService {
     func fetchInstalledCasks() async -> [BrewPackage] {
         let result = await runBrewCommand(["info", "--installed", "--cask", "--json=v2"])
         guard result.success, let data = result.output.data(using: .utf8) else {
-            logger.warning("Failed to fetch installed casks")
+            if !result.success {
+                lastError = .commandFailed(command: "info --installed --cask", output: result.output)
+            }
             return []
         }
 
@@ -46,7 +50,9 @@ extension BrewService {
     func fetchOutdatedPackages() async -> [BrewPackage] {
         let result = await runBrewCommand(["outdated", "--json=v2"])
         guard result.success, let data = result.output.data(using: .utf8) else {
-            logger.warning("Failed to fetch outdated packages")
+            if !result.success {
+                lastError = .commandFailed(command: "outdated", output: result.output)
+            }
             return []
         }
 
@@ -66,7 +72,9 @@ extension BrewService {
     func fetchTaps() async -> [BrewTap] {
         let result = await runBrewCommand(["tap-info", "--json=v1", "--installed"])
         guard result.success, let data = result.output.data(using: .utf8) else {
-            logger.warning("Failed to fetch taps")
+            if !result.success {
+                lastError = .commandFailed(command: "tap-info", output: result.output)
+            }
             return []
         }
 

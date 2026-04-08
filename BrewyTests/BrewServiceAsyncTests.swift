@@ -79,6 +79,7 @@ struct RefreshTests {
 
         #expect(service.installedFormulae.isEmpty)
         #expect(service.installedCasks.count == 1)
+        #expect(service.lastError != nil)
     }
 
     @Test("refresh invalidates info cache when versions change")

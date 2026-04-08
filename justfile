@@ -21,12 +21,13 @@ clean:
 
 # Test
 
-# Run tests with xcodebuild (matches CI)
+# Run unit tests (skips UI tests that require code signing locally)
 test:
     xcodebuild test \
         -project Brewy.xcodeproj \
         -scheme Brewy \
         -destination 'platform=macOS' \
+        -only-testing:BrewyTests \
         -enableCodeCoverage YES \
         CODE_SIGN_IDENTITY="" \
         CODE_SIGNING_REQUIRED=NO \
@@ -84,6 +85,7 @@ check:
         -project Brewy.xcodeproj \
         -scheme Brewy \
         -destination 'platform=macOS' \
+        -only-testing:BrewyTests \
         -enableCodeCoverage YES \
         CODE_SIGN_IDENTITY="" \
         CODE_SIGNING_REQUIRED=NO \
