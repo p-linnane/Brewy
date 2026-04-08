@@ -3,16 +3,28 @@
     <channel>
         <title>Brewy</title>
         <item>
-            <title>0.9.1</title>
-            <pubDate>Fri, 06 Mar 2026 18:40:44 +0000</pubDate>
-            <sparkle:version>13</sparkle:version>
-            <sparkle:shortVersionString>0.9.1</sparkle:shortVersionString>
+            <title>0.10.0</title>
+            <pubDate>Wed, 08 Apr 2026 18:19:18 +0000</pubDate>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>0.10.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Fixes</h2>
+            <description><![CDATA[<h2>What&#x27;s New</h2>
 <ul>
-  <li>handle duplicate mas ID 0 for TestFlight apps</li>
+  <li>add accessibility labels to status indicators and interactive elements</li>
+  <li>visual refresh across sidebar, list rows, detail pane, and empty state</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+  <li>resolve force unwraps, stale state, and concurrent refresh issues</li>
+  <li>increase UI test timeouts to prevent flaky ASAN failures</li>
+  <li>surface fetch errors to user and skip UI tests locally</li>
+  <li>polish action bar and maintenance view layout</li>
+</ul>
+<h2>Documentation</h2>
+<ul>
+  <li>update CLAUDE.md and README.md to reflect current codebase</li>
 </ul>]]></description>
-            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.9.1/Brewy-0.9.1.zip" length="5561524" type="application/octet-stream" sparkle:edSignature="tz2xKzHvlYFVcK+7hASd5qoF3zMgy14cP+46mGvRLC5Vl73vLzHzrPRHx6iNYd/5fjuJ2C+XopO77yHXaUf3Dg=="/>
+            <enclosure url="https://github.com/p-linnane/Brewy/releases/download/0.10.0/Brewy-0.10.0.zip" length="5551749" type="application/octet-stream" sparkle:edSignature="VaHvAW/IlIOdwyM63PrXdMaKUKDjg87klgI1mBwK9HmuPjd4L6C1uIw4v4I/EqyHZMHcIn72noZE9C+hJTh9Bw=="/>
         </item>
     </channel>
 </rss>
