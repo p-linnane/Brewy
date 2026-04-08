@@ -157,6 +157,9 @@ private struct ActionBar: View {
     private var brewService
     let package: BrewPackage
     @Binding var showUninstallConfirm: Bool
+    @State private var showReinstallConfirm = false
+    @State private var showLinkConfirm = false
+    @State private var showUnlinkConfirm = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -181,17 +184,41 @@ private struct ActionBar: View {
                 notInstalledActionsMenu
             }
 
-            Spacer()
-
             if !package.homepage.isEmpty, let url = URL(string: package.homepage) {
                 Link(destination: url) {
                     Label(package.isMas ? "App Store" : "Homepage", systemImage: package.isMas ? "app.badge.fill" : "globe")
                 }
                 .buttonStyle(.bordered)
             }
+
+            Spacer()
         }
         .padding()
         .disabled(brewService.isPerformingAction)
+        .confirmationDialog("Reinstall \(package.name)?", isPresented: $showReinstallConfirm) {
+            Button("Reinstall") {
+                Task { await brewService.reinstall(package: package) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove and reinstall \(package.name). Your data and configuration will be preserved.")
+        }
+        .confirmationDialog("Link \(package.name)?", isPresented: $showLinkConfirm) {
+            Button("Link") {
+                Task { await brewService.link(package: package) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will symlink \(package.name) into Homebrew's prefix.")
+        }
+        .confirmationDialog("Unlink \(package.name)?", isPresented: $showUnlinkConfirm) {
+            Button("Unlink") {
+                Task { await brewService.unlink(package: package) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove symlinks for \(package.name) from Homebrew's prefix.")
+        }
     }
 
     private var installedActionsMenu: some View {
@@ -208,7 +235,7 @@ private struct ActionBar: View {
                 }
             }
             Button("Reinstall", systemImage: "arrow.triangle.2.circlepath") {
-                Task { await brewService.reinstall(package: package) }
+                showReinstallConfirm = true
             }
             Button("Fetch", systemImage: "arrow.down.to.line") {
                 Task { await brewService.fetch(package: package) }
@@ -216,10 +243,10 @@ private struct ActionBar: View {
             if !package.isCask {
                 Divider()
                 Button("Link", systemImage: "link") {
-                    Task { await brewService.link(package: package) }
+                    showLinkConfirm = true
                 }
                 Button("Unlink", systemImage: "minus.circle") {
-                    Task { await brewService.unlink(package: package) }
+                    showUnlinkConfirm = true
                 }
             }
             if !brewService.packageGroups.isEmpty {
@@ -231,8 +258,9 @@ private struct ActionBar: View {
                 showUninstallConfirm = true
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Label("Actions", systemImage: "ellipsis.circle")
         }
+        .menuIndicator(.hidden)
         .buttonStyle(.bordered)
     }
 
@@ -242,8 +270,9 @@ private struct ActionBar: View {
                 Task { await brewService.fetch(package: package) }
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Label("Actions", systemImage: "ellipsis.circle")
         }
+        .menuIndicator(.hidden)
         .buttonStyle(.bordered)
     }
 }

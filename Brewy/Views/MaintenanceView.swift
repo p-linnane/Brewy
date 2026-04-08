@@ -91,6 +91,7 @@ struct MaintenanceView: View {
             }
         } footer: {
             Text("Checks your system for potential problems with Homebrew.")
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -113,6 +114,7 @@ struct MaintenanceView: View {
             }
         } footer: {
             Text("Removes packages that were installed as dependencies but are no longer needed.")
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -142,6 +144,7 @@ struct MaintenanceView: View {
             }
         } footer: {
             Text("Removes cached package downloads and old versions.")
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -172,6 +175,7 @@ struct MaintenanceView: View {
             configRow("Homebrew/cask last updated", value: brewConfig?.coreCaskTapLastCommit)
         } footer: {
             Text("Fetches the newest version of Homebrew and all formulae from GitHub.")
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
