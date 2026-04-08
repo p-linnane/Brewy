@@ -283,14 +283,14 @@ jobs:
         env:
           SSH_SIGNING_KEY: ${{ secrets.SSH_SIGNING_KEY }}
         run: |
-          git config user.name "fuyunohoshi"
-          git config user.email "165941061+fuyunohoshi@users.noreply.github.com"
+          git config --global user.name "fuyunohoshi"
+          git config --global user.email "165941061+fuyunohoshi@users.noreply.github.com"
           eval $(ssh-agent)
           echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> "${GITHUB_ENV}"
           echo "SSH_AGENT_PID=${SSH_AGENT_PID}" >> "${GITHUB_ENV}"
           pubkey=$(ssh-keygen -y -f /dev/stdin <<< "${SSH_SIGNING_KEY}")
           ssh-add -q - <<< "${SSH_SIGNING_KEY}"
-          allowed_signer="$(git config get user.email) ${pubkey}"
+          allowed_signer="$(git config --global get user.email) ${pubkey}"
           mkdir -p ~/.ssh
           echo "${allowed_signer}" >> ~/.ssh/allowed_signers
           git config --global gpg.format ssh
