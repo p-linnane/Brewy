@@ -15,6 +15,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    versioning-strategy: increase
     cooldown:
       default-days: 7
     groups:
