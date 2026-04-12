@@ -1,0 +1,49 @@
+name: pinprick audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "pinprick-audit-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # required to upload SARIF results
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinprick
+        run: /home/linuxbrew/.linuxbrew/bin/brew install p-linnane/tap/pinprick
+
+      - name: Run pinprick audit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          /home/linuxbrew/.linuxbrew/bin/pinprick audit --sarif . > pinprick.sarif
+          EXIT=$?
+          # 0 = clean, 1 = findings (still upload), 2+ = real error
+          if [[ "${EXIT}" -gt 1 ]]; then
+            echo "::error::pinprick audit errored with exit code ${EXIT}"
+            exit "${EXIT}"
+          fi
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+        with:
+          sarif_file: pinprick.sarif
+          category: pinprick
