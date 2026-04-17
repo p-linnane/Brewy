@@ -80,13 +80,7 @@ struct MaintenanceView: View {
                 }
 
                 if let output = doctorOutput {
-                    Text(output.isEmpty ? "Your system is ready to brew." : output)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(output.isEmpty ? .green : .secondary)
-                        .textSelection(.enabled)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
+                    ConsoleOutput(text: output.isEmpty ? "Your system is ready to brew." : output, padding: 10)
                 }
             }
         } footer: {

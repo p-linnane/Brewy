@@ -6,15 +6,8 @@ extension Notification.Name {
 
 // MARK: - Package Navigation Environment
 
-private struct SelectPackageActionKey: EnvironmentKey {
-    static let defaultValue: @MainActor @Sendable (String) -> Void = { _ in }
-}
-
 extension EnvironmentValues {
-    var selectPackage: @MainActor @Sendable (String) -> Void {
-        get { self[SelectPackageActionKey.self] }
-        set { self[SelectPackageActionKey.self] = newValue }
-    }
+    @Entry var selectPackage: @MainActor @Sendable (String) -> Void = { _ in }
 }
 
 struct ContentView: View {

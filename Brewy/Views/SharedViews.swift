@@ -60,6 +60,29 @@ struct FlowLayout: Layout {
     }
 }
 
+// MARK: - Console Output
+
+struct ConsoleOutput: View {
+    let text: String
+    var maxHeight: CGFloat?
+    var padding: CGFloat = 12
+
+    var body: some View {
+        let content = Text(text)
+            .font(.system(.caption, design: .monospaced))
+            .foregroundStyle(.secondary)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(padding)
+            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
+        if let maxHeight {
+            ScrollView { content }.frame(maxHeight: maxHeight)
+        } else {
+            content
+        }
+    }
+}
+
 // MARK: - Action Overlay
 
 struct ActionOverlay: View {

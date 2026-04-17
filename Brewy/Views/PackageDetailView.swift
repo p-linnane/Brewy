@@ -425,13 +425,7 @@ private struct BrewInfoSection: View {
                     .frame(maxWidth: .infinity)
                     .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
                 } else if !info.isEmpty {
-                    Text(info)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
+                    ConsoleOutput(text: info)
                 }
             }
         }

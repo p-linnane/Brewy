@@ -139,13 +139,7 @@ struct HistoryDetailView: View {
                     .font(.callout)
                     .foregroundStyle(.tertiary)
             } else {
-                Text(entry.output)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
+                ConsoleOutput(text: entry.output, padding: 8)
             }
         } header: {
             Label("Output", systemImage: "terminal")

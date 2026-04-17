@@ -1,3 +1,4 @@
+import Combine
 import Sparkle
 import SwiftUI
 
@@ -84,27 +85,31 @@ struct BrewyApp: App {
 // MARK: - Sparkle Updates
 
 @MainActor
-private final class CheckForUpdatesViewModel: ObservableObject {
-    @Published var canCheckForUpdates = false
+@Observable
+private final class CheckForUpdatesViewModel {
+    var canCheckForUpdates = false
+    @ObservationIgnored private var cancellable: AnyCancellable?
 
     init(updater: SPUUpdater) {
-        updater.publisher(for: \.canCheckForUpdates)
-            .assign(to: &$canCheckForUpdates)
+        cancellable = updater.publisher(for: \.canCheckForUpdates)
+            .sink { [weak self] value in
+                self?.canCheckForUpdates = value
+            }
     }
 }
 
 private struct CheckForUpdatesView: View {
-    @ObservedObject private var checkForUpdatesViewModel: CheckForUpdatesViewModel
+    @State private var viewModel: CheckForUpdatesViewModel
     private let updater: SPUUpdater
 
     init(updater: SPUUpdater) {
         self.updater = updater
-        self.checkForUpdatesViewModel = CheckForUpdatesViewModel(updater: updater)
+        _viewModel = State(wrappedValue: CheckForUpdatesViewModel(updater: updater))
     }
 
     var body: some View {
         Button("Check for Updates…", action: updater.checkForUpdates)
-            .disabled(!checkForUpdatesViewModel.canCheckForUpdates)
+            .disabled(!viewModel.canCheckForUpdates)
     }
 }
 
