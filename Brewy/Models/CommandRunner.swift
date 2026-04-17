@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import OSLog
 
@@ -8,9 +9,16 @@ private let logger = Logger(subsystem: "io.linnane.brewy", category: "CommandRun
 struct CommandResult: Sendable {
     let output: String
     let success: Bool
+    let didTimeOut: Bool
+
+    init(output: String, success: Bool, didTimeOut: Bool = false) {
+        self.output = output
+        self.success = success
+        self.didTimeOut = didTimeOut
+    }
 }
 
-// MARK: - Locked Data Accumulator
+// MARK: - Thread-safe Value Containers
 
 /// Thread-safe accumulator for data chunks.
 private final class LockedData: Sendable {
@@ -30,6 +38,18 @@ private final class LockedData: Sendable {
         for chunk in chunks { result.append(chunk) }
         lock.unlock()
         return result
+    }
+}
+
+private final class LockedFlag: Sendable {
+    private let lock = NSLock()
+    nonisolated(unsafe) private var value = false
+
+    func set() { lock.lock(); value = true; lock.unlock() }
+
+    var isSet: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return value
     }
 }
 
@@ -67,6 +87,9 @@ struct DefaultCommandRunner: CommandRunning {
 enum CommandRunner {
 
     static let defaultTimeout: Duration = .seconds(300)
+
+    /// Grace period between SIGTERM and SIGKILL when a process exceeds its timeout.
+    private static let killGracePeriod: Duration = .seconds(3)
 
     static func resolvedBrewPath(preferred: String) -> String {
         let fallback = "/usr/local/bin/brew"
@@ -131,13 +154,20 @@ enum CommandRunner {
         let currentPath = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
         var pathComponents = currentPath.components(separatedBy: ":")
 
-        // Ensure brew's bin and sbin directories are in PATH
         for dir in [brewSbin, brewBin] where !pathComponents.contains(dir) {
             pathComponents.insert(dir, at: 0)
         }
 
         env["PATH"] = pathComponents.joined(separator: ":")
         return env
+    }
+
+    /// Convert a `Duration` into a `DispatchTimeInterval` that preserves sub-second precision.
+    private static func dispatchInterval(from duration: Duration) -> DispatchTimeInterval {
+        let components = duration.components
+        let totalNanos = components.seconds * 1_000_000_000 + components.attoseconds / 1_000_000_000
+        if totalNanos > Int64(Int.max) { return .seconds(Int.max) }
+        return .nanoseconds(Int(totalNanos))
     }
 
     private static func executeProcess(
@@ -158,55 +188,92 @@ enum CommandRunner {
 
         do {
             try process.run()
-
-            let timeoutWork = DispatchWorkItem {
-                if process.isRunning {
-                    logger.warning("Terminating timed-out process: \(commandDescription)")
-                    process.terminate()
-                }
-            }
-            DispatchQueue.global(qos: .utility).asyncAfter(
-                deadline: .now() + .seconds(Int(timeout.components.seconds)),
-                execute: timeoutWork
-            )
-
-            // Read stderr asynchronously to avoid pipe deadlock.
-            let stderrAccumulator = LockedData()
-            let stderrSemaphore = DispatchSemaphore(value: 0)
-            stderrPipe.fileHandleForReading.readabilityHandler = { handle in
-                let chunk = handle.availableData
-                if chunk.isEmpty {
-                    stderrSemaphore.signal()
-                } else {
-                    stderrAccumulator.append(chunk)
-                }
-            }
-
-            let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-            stderrSemaphore.wait()
-            stderrPipe.fileHandleForReading.readabilityHandler = nil
-
-            process.waitUntilExit()
-            timeoutWork.cancel()
-
-            let stderrData = stderrAccumulator.combined()
-
-            let output = String(data: stdoutData, encoding: .utf8) ?? ""
-            let errorOutput = String(data: stderrData, encoding: .utf8) ?? ""
-            let combinedOutput = output.isEmpty ? errorOutput : output
-
-            // Detect if the process was killed by the timeout (SIGTERM = 15)
-            if process.terminationReason == .uncaughtSignal {
-                return CommandResult(output: "Command timed out after \(timeout)", success: false)
-            }
-
-            return CommandResult(output: combinedOutput, success: process.terminationStatus == 0)
         } catch {
             logger.error("Failed to launch process: \(error.localizedDescription)")
             return CommandResult(
-                output: "Failed to run brew: \(error.localizedDescription)",
+                output: "Failed to run \(commandDescription): \(error.localizedDescription)",
                 success: false
             )
         }
+
+        let (stdoutData, stderrData) = drainPipesInParallel(stdout: stdoutPipe, stderr: stderrPipe)
+        let timedOut = scheduleTimeout(for: process, after: timeout, commandDescription: commandDescription)
+
+        process.waitUntilExit()
+        let out = stdoutData.wait()
+        let err = stderrData.wait()
+
+        if timedOut.isSet {
+            return CommandResult(
+                output: "Command timed out after \(timeout).",
+                success: false,
+                didTimeOut: true
+            )
+        }
+        let stdout = String(data: out, encoding: .utf8) ?? ""
+        let stderr = String(data: err, encoding: .utf8) ?? ""
+        return CommandResult(
+            output: stdout.isEmpty ? stderr : stdout,
+            success: process.terminationStatus == 0
+        )
+    }
+
+    private static func drainPipesInParallel(stdout: Pipe, stderr: Pipe) -> (stdout: PipeReader, stderr: PipeReader) {
+        let stdoutReader = PipeReader(pipe: stdout)
+        let stderrReader = PipeReader(pipe: stderr)
+        stdoutReader.start()
+        stderrReader.start()
+        return (stdoutReader, stderrReader)
+    }
+
+    private static func scheduleTimeout(
+        for process: Process,
+        after timeout: Duration,
+        commandDescription: String
+    ) -> LockedFlag {
+        let timedOut = LockedFlag()
+        let timeoutWork = DispatchWorkItem { [weak process] in
+            guard let process, process.isRunning else { return }
+            logger.warning("Timeout exceeded, sending SIGTERM: \(commandDescription)")
+            timedOut.set()
+            process.terminate()
+            let pid = process.processIdentifier
+            let graceDispatch = dispatchInterval(from: killGracePeriod)
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + graceDispatch) { [weak process] in
+                guard let process, process.isRunning else { return }
+                logger.warning("SIGTERM ignored, sending SIGKILL: \(commandDescription)")
+                kill(pid, SIGKILL)
+            }
+        }
+        DispatchQueue.global(qos: .utility).asyncAfter(
+            deadline: .now() + dispatchInterval(from: timeout),
+            execute: timeoutWork
+        )
+        return timedOut
+    }
+}
+
+// MARK: - Pipe Reader
+
+/// Drains a `Pipe` to EOF on a background queue so the subprocess cannot deadlock on a full buffer.
+private final class PipeReader: @unchecked Sendable {
+    private let pipe: Pipe
+    private let accumulator = LockedData()
+    private let semaphore = DispatchSemaphore(value: 0)
+
+    init(pipe: Pipe) { self.pipe = pipe }
+
+    func start() {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self else { return }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            accumulator.append(data)
+            semaphore.signal()
+        }
+    }
+
+    func wait() -> Data {
+        semaphore.wait()
+        return accumulator.combined()
     }
 }

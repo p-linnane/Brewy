@@ -41,6 +41,10 @@ extension BrewService {
     // MARK: - Action Helpers
 
     func performBrewAction(_ arguments: [String], refreshAfter: Bool = false) async {
+        guard !isPerformingAction else {
+            logger.info("\(arguments.first ?? "action") skipped, action already in progress")
+            return
+        }
         isPerformingAction = true
         actionOutput = ""
         lastError = nil
@@ -60,6 +64,10 @@ extension BrewService {
     func performAction(_ action: String, package: BrewPackage) async {
         guard !package.isMas else {
             logger.warning("Cannot perform brew action \(action) on mas package \(package.name)")
+            return
+        }
+        guard !isPerformingAction else {
+            logger.info("\(action) on \(package.name) skipped, action already in progress")
             return
         }
         logger.info("Performing \(action) on \(package.name)")
@@ -105,28 +113,13 @@ extension BrewService {
         let cachePath = pathResult.output.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cachePath.isEmpty else { return 0 }
 
-        return await Task.detached(priority: .userInitiated) {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/du")
-            process.arguments = ["-sk", cachePath]
-            process.standardOutput = pipe
-            process.standardError = FileHandle.nullDevice
-
-            do {
-                try process.run()
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-                let output = String(data: data, encoding: .utf8) ?? ""
-                if let sizeStr = output.split(separator: "\t").first,
-                   let sizeKB = Int64(sizeStr) {
-                    return sizeKB * 1_024
-                }
-            } catch {
-                logger.warning("Failed to calculate cache size: \(error.localizedDescription)")
-            }
-            return Int64(0)
-        }.value
+        let result = await commandRunner.runExecutable("/usr/bin/du", arguments: ["-sk", cachePath])
+        guard result.success,
+              let sizeStr = result.output.split(separator: "\t").first,
+              let sizeKB = Int64(sizeStr) else {
+            return 0
+        }
+        return sizeKB * 1_024
     }
 
     func purgeCache() async {

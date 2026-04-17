@@ -134,6 +134,10 @@ extension BrewService {
     }
 
     func installMas() async {
+        guard !isPerformingAction else {
+            logger.info("installMas skipped, action already in progress")
+            return
+        }
         logger.info("Installing mas via Homebrew")
         isPerformingAction = true
         actionOutput = ""

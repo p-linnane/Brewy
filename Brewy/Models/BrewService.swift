@@ -18,13 +18,28 @@ enum BrewError: LocalizedError {
         switch self {
         case .brewNotFound(let path):
             return "Homebrew not found at \(path)"
-        case .commandFailed(_, let output):
-            return output
+        case .commandFailed(let command, let output):
+            return Self.summarize(command: command, output: output)
         case .parseFailed(let command):
             return "Failed to parse output from: brew \(command)"
         case .commandTimedOut(let command):
             return "Command timed out: brew \(command)"
         }
+    }
+
+    private static let maxOutputChars = 800
+
+    private static func summarize(command: String, output: String) -> String {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "brew \(command) failed." }
+
+        let lines = trimmed.split(separator: "\n", omittingEmptySubsequences: false)
+        if let errorLine = lines.first(where: { $0.lowercased().hasPrefix("error:") }) {
+            return String(errorLine)
+        }
+        let tail = lines.suffix(6).joined(separator: "\n")
+        if tail.count <= maxOutputChars { return tail }
+        return "…" + String(tail.suffix(maxOutputChars))
     }
 }
 
@@ -75,6 +90,7 @@ final class BrewService {
     private var isRefreshing = false
     @ObservationIgnored private var isBatchingUpdates = false
     @ObservationIgnored var infoCache: [String: String] = [:]
+    @ObservationIgnored private var tapHealthTask: Task<Void, Never>?
 
     // MARK: - Cached Derived State
 
@@ -89,6 +105,21 @@ final class BrewService {
         installedFormulae = formulae
         installedCasks = casks
         installedMasApps = masApps
+        isBatchingUpdates = false
+        invalidateDerivedState()
+    }
+
+    private func applyRefreshResults(
+        formulae: [BrewPackage],
+        casks: [BrewPackage],
+        masApps: [BrewPackage],
+        outdated: [BrewPackage]
+    ) {
+        isBatchingUpdates = true
+        installedFormulae = formulae
+        installedCasks = casks
+        installedMasApps = masApps
+        outdatedPackages = outdated
         isBatchingUpdates = false
         invalidateDerivedState()
     }
@@ -145,7 +176,12 @@ final class BrewService {
 
     nonisolated private static let cacheURL: URL? = cacheDirectory?.appendingPathComponent("packageCache.json")
 
+    /// Current schema version for the package cache. Bump when `CachedData` gains a non-optional
+    /// field or changes semantics so old caches are deleted rather than silently discarded each launch.
+    static let cacheSchemaVersion = 1
+
     private struct CachedData: Codable {
+        let schemaVersion: Int
         let formulae: [BrewPackage]
         let casks: [BrewPackage]
         let masApps: [BrewPackage]?
@@ -159,6 +195,11 @@ final class BrewService {
         do {
             let data = try Data(contentsOf: cacheURL)
             let cached = try JSONDecoder().decode(CachedData.self, from: data)
+            guard cached.schemaVersion == Self.cacheSchemaVersion else {
+                logger.warning("Cache schema version \(cached.schemaVersion) != \(Self.cacheSchemaVersion), discarding")
+                try? FileManager.default.removeItem(at: cacheURL)
+                return
+            }
             let masApps = cached.masApps ?? []
             updateInstalledPackages(formulae: cached.formulae, casks: cached.casks, masApps: masApps)
             outdatedPackages = cached.outdated
@@ -169,6 +210,7 @@ final class BrewService {
             logger.info("Loaded \(cached.formulae.count) formulae and \(cached.casks.count) casks from cache")
         } catch {
             logger.warning("Failed to load cache: \(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: cacheURL)
         }
     }
 
@@ -176,6 +218,7 @@ final class BrewService {
         guard let cacheURL = Self.cacheURL,
               ProcessInfo.processInfo.environment["XCTestBundlePath"] == nil else { return }
         let cached = CachedData(
+            schemaVersion: Self.cacheSchemaVersion,
             formulae: installedFormulae,
             casks: installedCasks,
             masApps: installedMasApps,
@@ -241,12 +284,12 @@ final class BrewService {
         let allOutdated = fetchedOutdated + fetchedMasOutdated
         let outdatedByID = Dictionary(allOutdated.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
 
-        updateInstalledPackages(
+        applyRefreshResults(
             formulae: fetchedFormulae.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
             casks: fetchedCasks.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
-            masApps: fetchedMasApps.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) }
+            masApps: fetchedMasApps.map { Self.mergeOutdatedStatus($0, outdatedByID: outdatedByID) },
+            outdated: allOutdated
         )
-        outdatedPackages = allOutdated
         lastUpdated = Date()
 
         let currentVersions = Dictionary(allInstalled.map { ($0.id, $0.version) }, uniquingKeysWith: { _, last in last })
@@ -262,7 +305,10 @@ final class BrewService {
         logger.info("Refresh complete: \(fetchedFormulae.count) formulae, \(fetchedCasks.count) casks, \(masCount) mas, \(outdatedCount) outdated")
         saveToCache()
         if installedTaps.contains(where: { tapHealthStatuses[$0.name]?.isStale ?? true }) {
-            Task { await checkTapHealth() }
+            tapHealthTask?.cancel()
+            tapHealthTask = Task { [weak self] in
+                await self?.checkTapHealth()
+            }
         }
     }
 
@@ -282,6 +328,10 @@ final class BrewService {
     }
 
     func upgradeSelected(packages: [BrewPackage]) async {
+        guard !isPerformingAction else {
+            logger.info("upgradeSelected skipped, action already in progress")
+            return
+        }
         isPerformingAction = true
         actionOutput = ""
         lastError = nil

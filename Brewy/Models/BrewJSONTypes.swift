@@ -54,21 +54,23 @@ struct FormulaJSON: Decodable {
 struct CaskJSON: Decodable {
     let token: String
     let version: String?
+    let installed: String?
     let desc: String?
     let homepage: String?
 
     func toPackage() -> BrewPackage {
-        let resolvedVersion = version ?? "unknown"
+        let latest = version ?? "unknown"
+        let installedVersion = installed ?? latest
         return BrewPackage(
             id: "cask-\(token)",
             name: token,
-            version: resolvedVersion,
+            version: installedVersion,
             description: desc ?? "",
             homepage: homepage ?? "",
             isInstalled: true,
             isOutdated: false,
-            installedVersion: resolvedVersion,
-            latestVersion: nil,
+            installedVersion: installedVersion,
+            latestVersion: latest,
             source: .cask,
             pinned: false,
             installedOnRequest: true,

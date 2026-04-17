@@ -69,6 +69,10 @@ extension BrewService {
 
     func retryAction(_ entry: ActionHistoryEntry) async {
         guard entry.isRetryable else { return }
+        guard !isPerformingAction else {
+            logger.info("Retry skipped, action already in progress")
+            return
+        }
         isPerformingAction = true
         actionOutput = ""
         lastError = nil
@@ -117,7 +121,8 @@ extension BrewService {
             isInstalled: pkg.isInstalled, isOutdated: true,
             installedVersion: pkg.installedVersion,
             latestVersion: outdatedPkg.latestVersion,
-            source: pkg.source, pinned: pkg.pinned,
+            source: pkg.source,
+            pinned: pkg.pinned || outdatedPkg.pinned,
             installedOnRequest: pkg.installedOnRequest,
             dependencies: pkg.dependencies
         )

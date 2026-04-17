@@ -29,11 +29,20 @@ extension BrewService {
             logger.info("Migrating tap \(oldName) → \(newName)")
             guard await runTapCommand(["untap", oldName]) else { return false }
             tapHealthStatuses.removeValue(forKey: oldName)
-            return await runTapCommand(["tap", newName])
+            let tapped = await runTapCommand(["tap", newName])
+            if !tapped {
+                logger.warning("Rollback: re-adding \(oldName) after failure to add \(newName)")
+                _ = await runTapCommand(["tap", oldName])
+            }
+            return tapped
         }
     }
 
     private func performTapAction(_ action: () async -> Bool) async {
+        guard !isPerformingAction else {
+            logger.info("Tap action skipped, action already in progress")
+            return
+        }
         isPerformingAction = true
         actionOutput = ""
         lastError = nil

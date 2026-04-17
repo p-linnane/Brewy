@@ -61,6 +61,9 @@ enum TapHealthChecker {
         }
     }
 
+    /// Max number of concurrent GitHub requests to avoid triggering rate limits.
+    private static let maxConcurrentChecks = 5
+
     static func checkHealth(
         taps: [BrewTap],
         existing: [String: TapHealthStatus]
@@ -72,15 +75,34 @@ enum TapHealthChecker {
         let session = URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
         defer { session.invalidateAndCancel() }
 
-        for tap in taps {
-            if let cached = statuses[tap.name], !cached.isStale {
-                continue
+        struct Pending: Sendable { let name: String; let owner: String; let repo: String }
+        let pending: [Pending] = taps.compactMap { tap in
+            if let cached = statuses[tap.name], !cached.isStale { return nil }
+            guard let (owner, repo) = TapHealthStatus.parseGitHubRepo(from: tap.remote) else { return nil }
+            return Pending(name: tap.name, owner: owner, repo: repo)
+        }
+
+        await withTaskGroup(of: (String, TapHealthStatus).self) { group in
+            var inFlight = 0
+            var iterator = pending.makeIterator()
+            while let next = iterator.next() {
+                group.addTask {
+                    let status = await fetchRepoHealth(owner: next.owner, repo: next.repo, session: session)
+                    return (next.name, status)
+                }
+                inFlight += 1
+                if inFlight >= maxConcurrentChecks {
+                    if let (name, status) = await group.next() {
+                        statuses[name] = status
+                        updated = true
+                    }
+                    inFlight -= 1
+                }
             }
-            guard let (owner, repo) = TapHealthStatus.parseGitHubRepo(from: tap.remote) else {
-                continue
+            for await (name, status) in group {
+                statuses[name] = status
+                updated = true
             }
-            statuses[tap.name] = await fetchRepoHealth(owner: owner, repo: repo, session: session)
-            updated = true
         }
 
         let tapNames = Set(taps.map(\.name))

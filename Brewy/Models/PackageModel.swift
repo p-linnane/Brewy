@@ -230,6 +230,14 @@ final class AppcastParser: NSObject, XMLParserDelegate {
     private var insideItem = false
 
     func parse(data: Data) -> AppcastRelease? {
+        currentElement = ""
+        currentTitle = ""
+        currentPubDate = ""
+        currentVersion = ""
+        currentDescription = ""
+        release = nil
+        insideItem = false
+
         let parser = XMLParser(data: data)
         parser.delegate = self
         parser.parse()
