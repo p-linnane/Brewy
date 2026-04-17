@@ -45,7 +45,7 @@ Brewy/
 │       ├── MasSetupView.swift              # Mac App Store setup/configuration UI
 │       ├── MaintenanceView.swift           # brew doctor, cleanup, autoremove, cache management
 │       ├── DryRunConfirmationSheet.swift   # Preview modal for cleanup/autoremove operations
-│       ├── SharedViews.swift               # Reusable components: FlowLayout, ActionOverlay
+│       ├── SharedViews.swift               # Reusable components: FlowLayout, ConsoleOutput, ActionOverlay
 │       ├── SettingsView.swift              # Brew path, auto-refresh interval, theme
 │       ├── TapListView.swift               # Add/remove taps
 │       └── WhatsNewView.swift              # Release notes from Sparkle appcast
@@ -54,6 +54,7 @@ Brewy/
 │   ├── BrewServiceTests.swift              # Core service logic: derived state, reverse deps, leaves, category routing
 │   ├── BrewServiceAsyncTests.swift         # Async tests: refresh, search, bulk upgrade, actions
 │   ├── BrewServiceDetailTests.swift        # Maintenance, dry-run, info caching, tap management, retry, error handling
+│   ├── CommandRunnerTests.swift            # CommandRunner process execution + MockCommandRunner behavior
 │   ├── PackageModelTests.swift             # Package model JSON parsing, equality, hashing
 │   ├── TapAndConfigTests.swift             # Tap health, GitHub URL parsing, appcast parsing, config parsing
 │   ├── GroupsAndMasTests.swift             # Package groups, Mac App Store parsing
@@ -65,12 +66,11 @@ Brewy/
 ├── Brewy.xcodeproj/
 ├── .github/
 │   ├── workflows/
-│   │   ├── build.yml                       # PR tests: Thread Sanitizer + Address Sanitizer, coverage
-│   │   ├── check.yml                       # Runs `just check` (lint, test, audit)
+│   │   ├── ci.yml                          # Unified PR checks: dynamic matrix runs lint, TSAN, ASAN, CodeQL, zizmor, Conventional Commits
 │   │   ├── release.yml                     # Manual dispatch: archive, sign, notarize, Sparkle EdDSA, appcast, GitHub release, auto-bump Homebrew cask
-│   │   ├── conventional-commits.yml        # Validates PR title and commits follow Conventional Commits format
-│   │   ├── codeql.yml                      # Security analysis
-│   │   └── zizmor.yml                      # GitHub Actions security scanning
+│   │   ├── codeql.yml                      # Scheduled CodeQL analysis (on-push/scheduled, separate from PR matrix)
+│   │   ├── pinprick-audit.yml              # Audits dependency permissions via pinprick
+│   │   └── zizmor.yml                      # Scheduled GitHub Actions security scanning
 │   ├── appcast-template.xml                # Sparkle appcast template with envsubst placeholders
 │   ├── format-release-notes.py             # Formats GitHub auto-generated release notes (markdown + HTML)
 │   └── dependabot.yml                      # Dependency updates (Swift dependencies)
@@ -109,7 +109,7 @@ The central service object that holds all app state and orchestrates brew CLI ca
 - `info(for:)` — cached `brew info` output
 
 **Caching:** JSON serialization to `~/Library/Application Support/Brewy/`:
-- `packageCache.json` — packages (formulae, casks, mas apps, outdated, taps)
+- `packageCache.json` — packages (formulae, casks, mas apps, outdated, taps). Tagged with `cacheSchemaVersion`; a version mismatch or decode failure deletes the file so the app doesn't silently launch into empty state after a schema change.
 - `tapHealthCache.json` — tap health statuses with 24-hour TTL
 - `packageGroups.json` — user-created package groups
 - `actionHistory.json` — action history (max 100 entries)
@@ -118,11 +118,12 @@ The central service object that holds all app state and orchestrates brew CLI ca
 
 Static enum that executes `Process` (brew CLI and other executables) with:
 - `CommandRunning` protocol for dependency injection and testability
-- Configurable timeout (default 5 minutes)
-- Thread-safe stderr reading via `LockedData` (NSLock-backed accumulator)
-- DispatchWorkItem-based timeout termination
+- Configurable timeout (default 5 minutes) with sub-second precision preserved
+- Parallel stdout/stderr drain via dedicated `PipeReader` instances so large output on either stream can't deadlock the subprocess
+- Two-stage timeout termination: SIGTERM first, then SIGKILL after a 3s grace period; `CommandResult.didTimeOut` distinguishes timeouts from other failures
+- `LockedData` (NSLock-backed) and `LockedFlag` accumulators for thread-safe output collection
 - Brew path resolution: preferred path → `/usr/local/bin/brew` fallback
-- `runExecutable(_:arguments:)` — generic executable runner for external tools (mas, sudo)
+- `runExecutable(_:arguments:)` — generic executable runner for external tools (mas, sudo, du)
 - `resolvedMasPath()` — path resolution for Mac App Store CLI tool
 - PATH augmentation to include brew's bin and sbin directories
 
@@ -218,16 +219,16 @@ mas install ID                               # Install Mac App Store app
 ## Testing
 
 - Framework: Swift Testing (`@Suite`, `@Test` macros)
-- ~190 test cases across 10 test files (9 unit test files + 1 test helpers)
+- ~200 test cases across 11 test files (10 unit test files + 1 test helpers)
 - `MockCommandRunner` and shared test helpers in `TestHelpers.swift`
-- Tests cover: derived state, reverse deps, leaves, pinned filtering, category routing, outdated merge logic, all JSON parsing, model equality/hashing, config parsing, appcast XML parsing, tap health status, package groups, Mac App Store parsing, action history, services, dry-run, retry, error handling, async refresh/search/upgrade flows
+- Tests cover: derived state, reverse deps, leaves, pinned filtering, category routing, outdated merge logic, all JSON parsing, model equality/hashing, config parsing, appcast XML parsing, tap health status, package groups, Mac App Store parsing, action history, services, dry-run, retry, error handling, async refresh/search/upgrade flows, real-subprocess CommandRunner behavior (stdout/stderr drain, timeout, missing executable)
 - UI tests: sidebar navigation
 - CI runs both Thread Sanitizer and Address Sanitizer
 - Code coverage reported via `xccov`
 
 ## CI/CD pipeline
 
-**PR checks:** `just check` (lint + test + audit), Thread Sanitizer tests, Address Sanitizer tests, Conventional Commits validation, CodeQL, zizmor (Actions security)
+**PR checks:** A single `ci.yml` workflow generates a dynamic matrix based on changed paths: Conventional Commits (always), Lint + TSAN + ASAN (Swift changes), CodeQL (source-tree changes), zizmor (workflow changes). A final `conclusion` job gates merge on the matrix result. Edited PR events get their own per-run concurrency group so body/title edits don't cancel in-flight tests.
 
 **Release (manual dispatch):**
 1. Create git tag
@@ -248,7 +249,7 @@ Common types: `feat`, `fix`, `refactor`, `docs`, `ci`, `chore`
 
 All commits must:
 - Use `git commit -s` for DCO sign-off
-- Include a `Co-authored-by: Claude Opus 4.6 <noreply@anthropic.com>` trailer when authored with Claude
+- Include a `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer when authored with Claude (the local pre-commit hook checks for this)
 
 PRs are squash-merged with the PR number appended, e.g. `feat: add test suite with CI, sanitizers, and code coverage (#38)`.
 
@@ -264,7 +265,7 @@ PRs are squash-merged with the PR number appended, e.g. `feat: add test suite wi
 
 ## Code style and conventions
 
-- SwiftLint with 60 opt-in rules enabled (see `.swiftlint.yml`)
+- SwiftLint with 64 opt-in rules enabled (see `.swiftlint.yml`)
 - Line length: warning at 150, error at 200
 - Function body length: warning at 60, error at 100
 - `SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` in CI
