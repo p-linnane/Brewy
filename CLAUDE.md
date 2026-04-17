@@ -1,6 +1,6 @@
 # Brewy — Claude Project Context
 
-Brewy is a native macOS GUI for managing Homebrew packages, written in Swift/SwiftUI. It lets users browse, search, install, upgrade, pin, and uninstall formulae and casks without opening Terminal. The project is open source (AGPL-3.0-only) and lives at https://github.com/p-linnane/brewy.
+Brewy is a native macOS GUI for managing Homebrew packages, written in Swift/SwiftUI. It lets users browse, search, install, upgrade, pin, and uninstall formulae and casks without opening Terminal. The project is open source (AGPL-3.0-only) and lives at https://github.com/starhaven-io/Brewy.
 
 ## Project overview
 

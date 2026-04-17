@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pinprick
-        run: /home/linuxbrew/.linuxbrew/bin/brew install p-linnane/tap/pinprick
+        run: /home/linuxbrew/.linuxbrew/bin/brew install starhaven-io/tap/pinprick
 
       - name: Run pinprick audit
         env:
