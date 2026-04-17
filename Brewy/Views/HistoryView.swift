@@ -7,18 +7,17 @@ struct HistoryView: View {
 
     var body: some View {
         List(selection: $selectedEntry) {
-            ForEach(brewService.actionHistory) { entry in
-                HistoryRow(entry: entry)
-                    .tag(entry)
-            }
-        }
-        .overlay {
             if brewService.actionHistory.isEmpty {
                 ContentUnavailableView(
                     "No History",
                     systemImage: "clock.arrow.circlepath",
                     description: Text("Actions you perform will appear here.")
                 )
+            } else {
+                ForEach(brewService.actionHistory) { entry in
+                    HistoryRow(entry: entry)
+                        .tag(entry)
+                }
             }
         }
         .navigationTitle("History")

@@ -32,9 +32,8 @@ struct ContentView: View {
     @State private var selectedServiceItem: BrewServiceItem?
     @State private var selectedGroupItem: PackageGroup?
     @State private var selectedHistoryEntry: ActionHistoryEntry?
-    @State private var servicesRefreshTrigger = false
+    @State private var servicesRefreshTrigger = 0
     @State private var searchText = ""
-    @State private var showError = false
     @State private var showWhatsNew = false
 
     var body: some View {
@@ -76,7 +75,7 @@ struct ContentView: View {
         } detail: {
             detailView
         }
-        .environment(\.selectPackage) { [self] name in navigateToPackage(name) }
+        .environment(\.selectPackage) { name in navigateToPackage(name) }
         .task {
             if showCasksByDefault {
                 selectedCategory = .casks
@@ -85,6 +84,11 @@ struct ContentView: View {
             brewService.loadTapHealthCache()
             brewService.loadGroups()
             brewService.loadHistory()
+            let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+            if !currentVersion.isEmpty, currentVersion != lastSeenVersion {
+                lastSeenVersion = currentVersion
+                showWhatsNew = true
+            }
             await brewService.refresh()
         }
         .task(id: autoRefreshInterval) {
@@ -95,12 +99,18 @@ struct ContentView: View {
                 await brewService.refresh()
             }
         }
-        .onChange(of: brewService.lastError?.errorDescription) {
-            showError = brewService.lastError != nil
+        .onChange(of: selectedCategory) {
+            selectedTap = nil
+            selectedServiceItem = nil
+            selectedGroupItem = nil
+            selectedHistoryEntry = nil
         }
         .alert(
             "Error",
-            isPresented: $showError,
+            isPresented: Binding(
+                get: { brewService.lastError != nil },
+                set: { if !$0 { brewService.lastError = nil } }
+            ),
             presenting: brewService.lastError
         ) { _ in
             Button("OK") { brewService.lastError = nil }
@@ -109,13 +119,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showWhatsNew) {
             WhatsNewView()
-        }
-        .onAppear {
-            let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-            if !currentVersion.isEmpty, currentVersion != lastSeenVersion {
-                lastSeenVersion = currentVersion
-                showWhatsNew = true
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showWhatsNew)) { _ in
             showWhatsNew = true
@@ -128,7 +131,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(0)
         } else if selectedCategory == .services, let service = selectedServiceItem {
             ServiceDetailView(service: service) {
-                servicesRefreshTrigger.toggle()
+                servicesRefreshTrigger &+= 1
             }
             .id(service.id)
             .navigationSplitViewColumnWidth(ideal: 450)

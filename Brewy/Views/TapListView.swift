@@ -20,7 +20,9 @@ struct TapListView: View {
                         .tag(tap)
                         .contextMenu {
                             Button("Remove Tap", role: .destructive) {
-                                Task { await brewService.removeTap(name: tap.name) }
+                                let name = tap.name
+                                if selectedTap?.name == name { selectedTap = nil }
+                                Task { await brewService.removeTap(name: name) }
                             }
                         }
                 }

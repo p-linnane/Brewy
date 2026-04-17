@@ -47,13 +47,6 @@ struct MaintenanceView: View {
             async let configTask: () = loadConfig()
             _ = await (cacheTask, configTask)
         }
-        .task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
-                guard !Task.isCancelled else { break }
-                brewConfig = await brewService.config()
-            }
-        }
     }
 
     // MARK: - Health Check
@@ -183,13 +176,23 @@ struct MaintenanceView: View {
 
     private func loadCacheSize() async {
         isCalculatingCache = true
-        cacheSizeBytes = await brewService.cacheSize()
+        let size = await brewService.cacheSize()
+        guard !Task.isCancelled else {
+            isCalculatingCache = false
+            return
+        }
+        cacheSizeBytes = size
         isCalculatingCache = false
     }
 
     private func loadConfig() async {
         isLoadingConfig = true
-        brewConfig = await brewService.config()
+        let config = await brewService.config()
+        guard !Task.isCancelled else {
+            isLoadingConfig = false
+            return
+        }
+        brewConfig = config
         isLoadingConfig = false
     }
 

@@ -6,9 +6,8 @@ struct ServicesView: View {
     @State private var services: [BrewServiceItem] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var showError = false
     @Binding var selectedService: BrewServiceItem?
-    var refreshTrigger: Bool
+    var refreshTrigger: Int
 
     var body: some View {
         List(selection: $selectedService) {
@@ -28,9 +27,8 @@ struct ServicesView: View {
                 )
             }
         }
-        .task { await loadServices() }
+        .task(id: refreshTrigger) { await loadServices() }
         .refreshable { await loadServices() }
-        .onChange(of: refreshTrigger) { Task { await loadServices() } }
         .navigationTitle("Services")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -43,16 +41,27 @@ struct ServicesView: View {
                 .disabled(isLoading)
             }
         }
-        .alert("Error", isPresented: $showError) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            ),
+            presenting: errorMessage
+        ) { _ in
             Button("OK") { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "An unknown error occurred.")
+        } message: { message in
+            Text(message)
         }
     }
 
     func loadServices() async {
         isLoading = true
         let fetched = await brewService.fetchServices()
+        guard !Task.isCancelled else {
+            isLoading = false
+            return
+        }
         services = fetched
         if let selected = selectedService {
             selectedService = fetched.first { $0.id == selected.id }
@@ -64,7 +73,6 @@ struct ServicesView: View {
         let result = await brewService.cleanupServices()
         if !result.success {
             errorMessage = result.output.isEmpty ? "Cleanup failed" : result.output
-            showError = true
         }
         await loadServices()
     }
@@ -143,7 +151,6 @@ struct ServiceDetailView: View {
     @State private var isPerformingAction = false
     @State private var actionOutput: String?
     @State private var errorMessage: String?
-    @State private var showError = false
     @State private var useSudo = false
 
     var body: some View {
@@ -157,10 +164,17 @@ struct ServiceDetailView: View {
         }
         .formStyle(.grouped)
         .navigationTitle(service.name)
-        .alert("Error", isPresented: $showError) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            ),
+            presenting: errorMessage
+        ) { _ in
             Button("OK") { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "An unknown error occurred.")
+        } message: { message in
+            Text(message)
         }
     }
 
@@ -319,14 +333,13 @@ struct ServiceDetailView: View {
         return .secondary
     }
 
-    private func performAction(_ action: () async -> CommandResult) async {
+    private func performAction(_ action: @MainActor () async -> CommandResult) async {
         isPerformingAction = true
         actionOutput = nil
         let result = await action()
         actionOutput = result.output
         if !result.success {
             errorMessage = result.output.isEmpty ? "Command failed" : result.output
-            showError = true
         }
         isPerformingAction = false
         await onRefresh()

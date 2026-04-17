@@ -4,6 +4,7 @@ struct WhatsNewView: View {
     @Environment(\.dismiss)
     private var dismiss
     @State private var release: AppcastRelease?
+    @State private var parsedNotes: AttributedString?
     @State private var isLoading = true
     @State private var errorMessage: String?
 
@@ -79,8 +80,7 @@ struct WhatsNewView: View {
                         }
                     }
 
-                    if let html = release.descriptionHTML,
-                       let attributed = Self.attributedString(from: html) {
+                    if let attributed = parsedNotes {
                         Text(attributed)
                             .font(.callout)
                             .textSelection(.enabled)
@@ -132,9 +132,14 @@ struct WhatsNewView: View {
             }
 
             let parser = AppcastParser()
-            release = parser.parse(data: data)
+            let loaded = parser.parse(data: data)
+            guard !Task.isCancelled else { return }
+            release = loaded
 
-            if release == nil {
+            if let html = loaded?.descriptionHTML {
+                parsedNotes = Self.attributedString(from: html)
+            }
+            if loaded == nil {
                 errorMessage = "No release notes found."
             }
             isLoading = false

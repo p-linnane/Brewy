@@ -1,27 +1,25 @@
 import SwiftUI
 
 struct SidebarView: View {
-    @Environment(BrewService.self)
-    private var brewService
     @Binding var selectedCategory: SidebarCategory?
 
     var body: some View {
         List(selection: $selectedCategory) {
             Section("Packages") {
                 ForEach(SidebarCategory.packageCategories) { category in
-                    SidebarRow(category: category, count: count(for: category))
+                    SidebarRow(category: category)
                         .tag(category)
                 }
             }
             Section("Management") {
                 ForEach(SidebarCategory.managementCategories) { category in
-                    SidebarRow(category: category, count: count(for: category))
+                    SidebarRow(category: category)
                         .tag(category)
                 }
             }
             Section("Tools") {
                 ForEach(SidebarCategory.toolCategories) { category in
-                    SidebarRow(category: category, count: count(for: category))
+                    SidebarRow(category: category)
                         .tag(category)
                 }
             }
@@ -32,26 +30,14 @@ struct SidebarView: View {
         }
         .navigationTitle("Brewy")
     }
-
-    private func count(for category: SidebarCategory) -> Int? {
-        switch category {
-        case .masApps: brewService.isMasAvailable ? brewService.packages(for: category).count : nil
-        case .taps: brewService.installedTaps.count
-        case .services: nil
-        case .groups: brewService.packageGroups.isEmpty ? nil : brewService.packageGroups.count
-        case .history: brewService.actionHistory.isEmpty ? nil : brewService.actionHistory.count
-        case .discover: nil
-        case .maintenance: nil
-        default: brewService.packages(for: category).count
-        }
-    }
 }
 
 // MARK: - Sidebar Row
 
 private struct SidebarRow: View {
+    @Environment(BrewService.self)
+    private var brewService
     let category: SidebarCategory
-    let count: Int?
 
     var body: some View {
         Label {
@@ -68,6 +54,19 @@ private struct SidebarRow: View {
         } icon: {
             Image(systemName: category.systemImage)
                 .foregroundStyle(iconColor)
+        }
+    }
+
+    private var count: Int? {
+        switch category {
+        case .masApps: brewService.isMasAvailable ? brewService.packages(for: category).count : nil
+        case .taps: brewService.installedTaps.count
+        case .services: nil
+        case .groups: brewService.packageGroups.isEmpty ? nil : brewService.packageGroups.count
+        case .history: brewService.actionHistory.isEmpty ? nil : brewService.actionHistory.count
+        case .discover: nil
+        case .maintenance: nil
+        default: brewService.packages(for: category).count
         }
     }
 

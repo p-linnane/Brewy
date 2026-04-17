@@ -5,14 +5,16 @@ struct DiscoverView: View {
     private var brewService
     @Binding var selectedPackage: BrewPackage?
     @State private var searchText = ""
+    @State private var results: [BrewPackage] = []
+    @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         List(selection: $selectedPackage) {
-            if brewService.searchResults.isEmpty {
+            if results.isEmpty {
                 emptyContent
             } else {
-                ForEach(brewService.searchResults) { package in
+                ForEach(results) { package in
                     DiscoverRow(
                         package: package,
                         onInstall: { pkg in await brewService.install(package: pkg) }
@@ -26,17 +28,22 @@ struct DiscoverView: View {
         .onChange(of: searchText) {
             searchTask?.cancel()
             guard !searchText.isEmpty else {
-                brewService.searchResults = []
+                results = []
+                isSearching = false
                 return
             }
             searchTask = Task {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
-                await brewService.search(query: searchText)
+                isSearching = true
+                let fetched = await brewService.performSearch(query: searchText)
+                guard !Task.isCancelled else { return }
+                results = fetched
+                isSearching = false
             }
         }
         .overlay {
-            if brewService.isLoading, !searchText.isEmpty, brewService.searchResults.isEmpty {
+            if isSearching, !searchText.isEmpty, results.isEmpty {
                 ProgressView("Searching...")
             }
         }
@@ -44,7 +51,7 @@ struct DiscoverView: View {
         .navigationSubtitle(
             searchText.isEmpty
                 ? "Search to find new packages"
-                : "\(brewService.searchResults.count) results"
+                : "\(results.count) results"
         )
     }
 
@@ -55,7 +62,7 @@ struct DiscoverView: View {
                 systemImage: "magnifyingglass",
                 description: Text("Search all of Homebrew to discover and install formulae and casks.")
             )
-        } else if !brewService.isLoading {
+        } else if !isSearching {
             ContentUnavailableView.search(text: searchText)
         }
     }

@@ -44,7 +44,8 @@ struct PackageListView: View {
     }
 
     var body: some View {
-        packageList
+        let packages = displayedPackages
+        return packageList(packages: packages)
             .listStyle(.inset(alternatesRowBackgrounds: true))
             .searchable(text: $searchText, isPresented: $isSearchPresented, prompt: searchPrompt)
             .searchScopes($searchScope, activation: .onSearchPresentation) {
@@ -77,44 +78,34 @@ struct PackageListView: View {
                 selectedPackage = nil
             }
             .overlay {
-                if brewService.isLoading, displayedPackages.isEmpty {
+                if brewService.isLoading, packages.isEmpty {
                     ProgressView("Loading packages...")
                 }
             }
             .navigationTitle(navigationTitle)
-            .navigationSubtitle("\(displayedPackages.count) packages")
+            .navigationSubtitle("\(packages.count) packages")
             .toolbar {
                 PackageListToolbar(
                     isOutdated: isOutdatedCategory,
                     isSelecting: $isSelectingForUpgrade,
                     selectedForUpgrade: $selectedForUpgrade,
-                    outdatedPackages: isOutdatedCategory ? displayedPackages : []
+                    outdatedPackages: isOutdatedCategory ? packages : []
                 )
             }
     }
 
-    private var packageList: some View {
+    private func packageList(packages: [BrewPackage]) -> some View {
         List(selection: $selectedPackage) {
-            if displayedPackages.isEmpty {
+            if packages.isEmpty {
                 emptyContent
             } else {
-                ForEach(displayedPackages) { package in
+                ForEach(packages) { package in
                     HStack {
                         if isOutdatedCategory, isSelectingForUpgrade {
-                            Toggle(isOn: Binding(
-                                get: { selectedForUpgrade.contains(package.id) },
-                                set: { isSelected in
-                                    if isSelected {
-                                        selectedForUpgrade.insert(package.id)
-                                    } else {
-                                        selectedForUpgrade.remove(package.id)
-                                    }
-                                }
-                            )) {
-                                EmptyView()
-                            }
-                            .toggleStyle(.checkbox)
-                            .labelsHidden()
+                            UpgradeSelectionToggle(
+                                packageID: package.id,
+                                selectedForUpgrade: $selectedForUpgrade
+                            )
                         }
                         PackageRow(
                             package: package,
@@ -207,6 +198,28 @@ private struct PackageListToolbar: ToolbarContent {
                 }
             }
         }
+    }
+}
+
+// MARK: - Upgrade Selection Toggle
+
+private struct UpgradeSelectionToggle: View {
+    let packageID: String
+    @Binding var selectedForUpgrade: Set<String>
+
+    var body: some View {
+        Toggle(isOn: Binding(
+            get: { selectedForUpgrade.contains(packageID) },
+            set: { isSelected in
+                if isSelected {
+                    selectedForUpgrade.insert(packageID)
+                } else {
+                    selectedForUpgrade.remove(packageID)
+                }
+            }
+        )) { EmptyView() }
+        .toggleStyle(.checkbox)
+        .labelsHidden()
     }
 }
 

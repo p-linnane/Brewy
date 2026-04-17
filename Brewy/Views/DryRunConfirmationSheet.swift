@@ -11,7 +11,6 @@ struct DryRunConfirmationSheet: View {
 
     @State private var isLoadingPreview = true
     @State private var previewOutput = ""
-    @State private var hasLoadedPreview = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -38,8 +37,6 @@ struct DryRunConfirmationSheet: View {
         .padding(20)
         .frame(width: 480)
         .task {
-            guard !hasLoadedPreview else { return }
-            hasLoadedPreview = true
             previewOutput = await dryRunAction()
             isLoadingPreview = false
         }

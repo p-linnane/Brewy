@@ -23,11 +23,9 @@ struct PackageDetailView: View {
                     package: displayPackage,
                     showUninstallConfirm: $showUninstallConfirm
                 )
-                .id(displayPackage.homepage)
                 Divider()
                     .padding(.horizontal)
                 PackageInfoSection(package: displayPackage)
-                .id(displayPackage.description)
                 if !package.isMas {
                     Divider()
                         .padding(.horizontal)
@@ -46,10 +44,15 @@ struct PackageDetailView: View {
             if package.homepage.isEmpty {
                 async let details = brewService.fetchPackageDetail(for: package)
                 async let info = brewService.info(for: package)
-                enrichedPackage = await details
-                detailedInfo = await info
+                let fetchedDetails = await details
+                let fetchedInfo = await info
+                guard !Task.isCancelled else { return }
+                enrichedPackage = fetchedDetails
+                detailedInfo = fetchedInfo
             } else {
-                detailedInfo = await brewService.info(for: package)
+                let fetched = await brewService.info(for: package)
+                guard !Task.isCancelled else { return }
+                detailedInfo = fetched
             }
             isLoadingInfo = false
         }
