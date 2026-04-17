@@ -9,7 +9,9 @@ defaults:
     shell: bash -xeuo pipefail {0}
 
 concurrency:
-  group: "ci-${{ github.ref }}"
+  # PR body/title edits fire `edited` events; give them their own per-run group so
+  # they can't cancel in-flight tests from the preceding `opened`/`synchronize` run.
+  group: ${{ github.event.action == 'edited' && format('ci-edit-{0}-{1}', github.ref, github.run_id) || format('ci-{0}', github.ref) }}
   cancel-in-progress: true
 
 permissions: {}
