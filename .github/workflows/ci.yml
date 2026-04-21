@@ -69,6 +69,10 @@ jobs:
     name: ${{ matrix.name }}
     needs: generate-matrix
     runs-on: ${{ matrix.runner }}
+    # Cap at 45m: lint/commits finish in seconds, CodeQL runs ~20m, sanitizer
+    # test jobs ~10m. Anything past this is a hang — fail fast instead of
+    # burning up to 6h of the default runner budget.
+    timeout-minutes: 45
     permissions:
       contents: read
       pull-requests: read # required to fetch PR commits for conventional commit validation
