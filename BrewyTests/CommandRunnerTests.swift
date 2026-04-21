@@ -44,22 +44,13 @@ struct MockCommandRunnerBehaviorTests {
     }
 }
 
-/// Real-subprocess coverage for `CommandRunner.runExecutable`. Skipped on
-/// GitHub Actions runners (detected via `/Users/runner`): `Pipe` +
-/// `readDataToEndOfFile()` stopped observing EOF after the child exits
-/// there, on both macos-15 and macos-26 images, some time between
-/// April 17 and April 20. The hang reproduces even for `/bin/echo`, even
-/// with the suite serialized, even after explicitly closing the parent's
-/// copy of the pipe write-ends — so it's not parallelism or our FD
-/// bookkeeping. Suspect a Foundation.Process/Pipe regression on the
-/// runner image. The same code passes locally on macOS 15 under TSAN in
-/// ~1s and it ran fine on macos-26 CI as recently as April 17, so no
-/// product-visible bug. Runs locally via `just test`.
+// `/Users/runner` is the GitHub Actions runner home; `CI` / `GITHUB_ACTIONS`
+// don't reliably reach the test host under `xcodebuild test`.
 @Suite(
     "CommandRunner Process Execution",
     .disabled(
         if: FileManager.default.fileExists(atPath: "/Users/runner"),
-        "Subprocess pipe reads hang on GitHub Actions runners — run locally instead"
+        "Pipe reads hang on Actions runner images; run locally"
     )
 )
 struct CommandRunnerProcessTests {
