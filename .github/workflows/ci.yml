@@ -165,6 +165,7 @@ jobs:
             -project Brewy.xcodeproj \
             -scheme Brewy \
             -destination 'platform=macOS' \
+            -derivedDataPath ./DerivedData \
             ${XCODEBUILD_FLAGS} \
             -resultBundlePath "${RESULT_BUNDLE}.xcresult" \
             CODE_SIGN_IDENTITY="" \
@@ -175,6 +176,62 @@ jobs:
       - name: Coverage Summary
         if: success() && matrix.check == 'test-tsan'
         run: xcrun xccov view --report --only-targets TestResults-TSAN.xcresult
+
+      - name: Export LCOV for Codecov
+        if: success() && matrix.check == 'test-tsan'
+        run: |
+          PROFDATA=$(find ./DerivedData -name 'Coverage.profdata' -type f | head -1)
+          if [[ -z "${PROFDATA}" ]]; then
+            echo "::error::No Coverage.profdata found under ./DerivedData"
+            exit 1
+          fi
+          BINARY_ARGS=()
+          FIRST=""
+          while IFS= read -r xctest; do
+            name=$(basename "${xctest}" .xctest)
+            bin="${xctest}/Contents/MacOS/${name}"
+            [[ -f "${bin}" ]] || continue
+            if [[ -z "${FIRST}" ]]; then FIRST="${bin}"; else BINARY_ARGS+=(-object "${bin}"); fi
+          done < <(find ./DerivedData/Build/Products -name '*.xctest' -type d)
+          while IFS= read -r app; do
+            name=$(basename "${app}" .app)
+            bin="${app}/Contents/MacOS/${name}"
+            [[ -f "${bin}" ]] || continue
+            if [[ -z "${FIRST}" ]]; then FIRST="${bin}"; else BINARY_ARGS+=(-object "${bin}"); fi
+          done < <(find ./DerivedData/Build/Products -name '*.app' -type d -not -path '*.xctest*')
+          if [[ -z "${FIRST}" ]]; then
+            echo "::error::No instrumented binaries found under ./DerivedData/Build/Products"
+            exit 1
+          fi
+          xcrun llvm-cov export -format=lcov \
+            -ignore-filename-regex='(Tests/|\.build/|DerivedData/|/Checkouts/|/SourcePackages/)' \
+            "${FIRST}" \
+            "${BINARY_ARGS[@]}" \
+            -instr-profile="${PROFDATA}" \
+            > coverage.lcov
+          echo "lcov: $(wc -l < coverage.lcov) lines"
+
+      - name: Upload coverage to Codecov
+        if: success() && matrix.check == 'test-tsan'
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
+          fail_ci_if_error: false
+
+      - name: Convert xcresult to JUnit
+        if: ${{ !cancelled() && matrix.check == 'test-tsan' }}
+        env:
+          RESULT_BUNDLE: ${{ matrix.result_bundle }}
+        run: python3 scripts/xcresult-to-junit.py "${RESULT_BUNDLE}.xcresult" > junit.xml
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && matrix.check == 'test-tsan' }}
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: junit.xml
+          fail_ci_if_error: false
 
       - name: Upload Test Results
         if: always() && startsWith(matrix.check, 'test-')
