@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  push:
+    branches:
+      - main
 
 defaults:
   run:
@@ -35,7 +38,15 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           EVENT_ACTION: ${{ github.event.action }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
+          # Push to main: run test-tsan so Codecov has a baseline for PR
+          # coverage comparisons.
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            echo 'matrix=[{"name":"Test (Thread Sanitizer)","check":"test-tsan","runner":"macos-26","xcodebuild_flags":"-enableCodeCoverage YES -enableThreadSanitizer YES","result_bundle":"TestResults-TSAN","environment":"codecov"}]' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
           MATRIX='[{"name":"Conventional Commits","check":"commits","runner":"ubuntu-slim","fetch_depth":"0"}'
 
           # For title/body edits, only recheck conventional commits
@@ -46,8 +57,8 @@ jobs:
 
           CHANGED=$(git diff --name-only "${BASE_SHA}...HEAD")
 
-          # Swift changes: lint + sanitizer tests
-          if echo "${CHANGED}" | grep -qE '\.swift$|^Brewy\.xcodeproj/|^\.swiftlint\.yml$'; then
+          # Swift or CI workflow changes: lint + sanitizer tests
+          if echo "${CHANGED}" | grep -qE '\.swift$|^Brewy\.xcodeproj/|^\.swiftlint\.yml$|^\.github/workflows/ci\.yml$'; then
             MATRIX+=',{"name":"Lint","check":"lint","runner":"macos-26"}'
             MATRIX+=',{"name":"Test (Thread Sanitizer)","check":"test-tsan","runner":"macos-26","xcodebuild_flags":"-enableCodeCoverage YES -enableThreadSanitizer YES","result_bundle":"TestResults-TSAN","environment":"codecov"}'
             MATRIX+=',{"name":"Test (Address Sanitizer)","check":"test-asan","runner":"macos-26","xcodebuild_flags":"-enableAddressSanitizer YES","result_bundle":"TestResults-ASAN"}'
@@ -190,18 +201,21 @@ jobs:
           fi
           BINARY_ARGS=()
           FIRST=""
+          # Skip bundles nested inside .framework or .xctest — embedded helpers
+          # (e.g. Sparkle's Updater.app) ship as universal binaries that
+          # llvm-cov can't export without an explicit -arch.
           while IFS= read -r xctest; do
             name=$(basename "${xctest}" .xctest)
             bin="${xctest}/Contents/MacOS/${name}"
             [[ -f "${bin}" ]] || continue
             if [[ -z "${FIRST}" ]]; then FIRST="${bin}"; else BINARY_ARGS+=(-object "${bin}"); fi
-          done < <(find ./DerivedData/Build/Products -name '*.xctest' -type d)
+          done < <(find ./DerivedData/Build/Products -name '*.xctest' -type d -not -path '*.framework/*' -not -path '*.xctest/*')
           while IFS= read -r app; do
             name=$(basename "${app}" .app)
             bin="${app}/Contents/MacOS/${name}"
             [[ -f "${bin}" ]] || continue
             if [[ -z "${FIRST}" ]]; then FIRST="${bin}"; else BINARY_ARGS+=(-object "${bin}"); fi
-          done < <(find ./DerivedData/Build/Products -name '*.app' -type d -not -path '*.xctest*')
+          done < <(find ./DerivedData/Build/Products -name '*.app' -type d -not -path '*.framework/*' -not -path '*.xctest/*' -not -name '*-Runner.app')
           if [[ -z "${FIRST}" ]]; then
             echo "::error::No instrumented binaries found under ./DerivedData/Build/Products"
             exit 1
@@ -209,7 +223,7 @@ jobs:
           xcrun llvm-cov export -format=lcov \
             -ignore-filename-regex='(Tests/|\.build/|DerivedData/|/Checkouts/|/SourcePackages/)' \
             "${FIRST}" \
-            "${BINARY_ARGS[@]}" \
+            ${BINARY_ARGS[@]+"${BINARY_ARGS[@]}"} \
             -instr-profile="${PROFDATA}" \
             > coverage.lcov
           echo "lcov: $(wc -l < coverage.lcov) lines"
